@@ -17,7 +17,7 @@ setup(name='worker',
       author='Guillermo Guirao Aguilar',
       author_email='info@bitelio.com',
       url='https://github.com/bitelio/worker',
-      install_requires=[],
+      install_requires=['raven'],
       setup_requires=['nose', 'rednose', 'coverage'],
       classifiers=['Programming Language :: Python :: 3.5'],
       entry_points={'console_scripts': ['run = worker:run']})
