@@ -1,7 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from functools import partialmethod
 from schematics.models import Model as OriginalModel
+from schematics.exceptions import ConversionError
+from schematics.undefined import Undefined
 from schematics.types import BaseType
 
 
@@ -13,11 +16,4 @@ class Model(OriginalModel):
         super().__init__(raw_data, **kwargs)
 
 
-def patch(self, **kwargs):
-    if 'required' not in kwargs:
-        kwargs['required'] = True
-    init(self, **kwargs)
-
-
-init = BaseType.__init__
-BaseType.__init__ = patch
+BaseType.__init__ = partialmethod(BaseType.__init__, required=True)
