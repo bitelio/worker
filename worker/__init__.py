@@ -9,7 +9,7 @@ import leankit
 
 from . import config
 from . import database
-from . import compare
+# from . import compare
 
 __author__ = "Guillermo Guirao Aguilar"
 __email__ = "info@bitelio.com"
@@ -80,10 +80,11 @@ class Worker:
             self.update(board)
 
     def update(self, board):
-        compare.lanes(board)
+        # compare.lanes(board)
         # lanes & others
         # cards
         # history
+        pass
 
     def archive(self, board):
         """ Check for new cards in archive """

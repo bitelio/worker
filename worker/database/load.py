@@ -15,5 +15,5 @@ def field(collection, field, board_id=None):
     return [document[field] for document in documents]
 
 
-def dict(key, **kwargs):
+def table(key, **kwargs):
     return {doc[key]: doc for doc in collection(**kwargs)}
