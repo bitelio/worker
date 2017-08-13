@@ -4,16 +4,16 @@
 from schematics.types import ListType
 from schematics.types import IntType
 from schematics.types import StringType
+from schematics.models import Model
 
-from . import Model
-from .types import KanbanType
+from .types import KanbanIdType
 
 
 class Board(Model):
-    Id = KanbanType()
-    Title = StringType()
-    Version = IntType()
-    TopLevelLaneIds = ListType(KanbanType)
-    BacklogTopLevelLaneId = IntType()
     ArchiveTopLevelLaneId = IntType()
     AvailableTags = ListType(StringType)
+    BacklogTopLevelLaneId = IntType()
+    Id = KanbanIdType()
+    Title = StringType()
+    TopLevelLaneIds = ListType(KanbanIdType)
+    Version = IntType()

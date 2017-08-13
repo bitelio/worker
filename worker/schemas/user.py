@@ -4,14 +4,15 @@
 from schematics.types import StringType
 from schematics.types import BooleanType
 
-from . import Model
-from .types import KanbanType
+from .models import KanbanModel
+from .types import KanbanIdType
 
 
-class User(Model):
-    Id = KanbanType()
-    UserName = StringType()
-    FullName = StringType()
+class User(KanbanModel):
+    BoardId = KanbanIdType()
     Enabled = BooleanType()
+    FullName = StringType()
     GravatarLink = StringType()
+    Id = KanbanIdType()
     Role = StringType(choices=[1, 2, 3, 4])
+    UserName = StringType()

@@ -4,13 +4,14 @@
 from schematics.types import StringType
 from schematics.types import BooleanType
 
-from . import Model
-from .types import KanbanType
+from .models import KanbanModel
+from .types import KanbanIdType
 
 
-class CardType(Model):
-    Id = KanbanType()
-    Name = StringType()
+class CardType(KanbanModel):
+    BoardId = KanbanIdType()
     ColorHex = StringType()
+    Id = KanbanIdType()
     IsCardType = BooleanType()
     IsTaskType = BooleanType()
+    Name = StringType()

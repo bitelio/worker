@@ -7,16 +7,17 @@ from schematics.types import DictType
 from schematics.types import StringType
 from schematics.types import DateTimeType
 
-from . import Model
-from .types import KanbanType
+from .models import KanbanModel
+from .types import KanbanIdType
 
 
-class Event(Model):
-    Type = StringType()
-    CardId = KanbanType()
-    UserId = KanbanType()
-    Position = IntType()
+class Event(KanbanModel):
+    BoardId = KanbanIdType()
+    CardId = KanbanIdType()
+    Changes = ListType(DictType(StringType))
     DateTime = DateTimeType()
-    ToLaneId = KanbanType()
-    FromLaneId = KanbanType()
-    Changes = ListType(DictType)
+    FromLaneId = KanbanIdType()
+    Position = IntType()
+    ToLaneId = KanbanIdType()
+    Type = StringType()
+    UserId = KanbanIdType()
