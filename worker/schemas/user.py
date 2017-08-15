@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from schematics.types import IntType
 from schematics.types import StringType
 from schematics.types import BooleanType
 
@@ -14,5 +15,5 @@ class User(KanbanModel):
     FullName = StringType()
     GravatarLink = StringType()
     Id = KanbanIdType()
-    Role = StringType(choices=[1, 2, 3, 4])
+    Role = IntType(choices=[1, 2, 3, 4])
     UserName = StringType()

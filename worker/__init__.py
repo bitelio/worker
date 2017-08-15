@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import time
-import raven
+# import raven
 import signal
 import logging
 import leankit
@@ -17,7 +17,7 @@ __version__ = "0.0.1"
 
 
 log = logging.getLogger(__name__)
-sentry = raven.Client()
+# sentry = raven.Client()
 
 
 class Worker:

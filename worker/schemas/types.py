@@ -7,18 +7,20 @@ from schematics.types import DateType
 from schematics.exceptions import ValidationError
 
 
-class KanbanIdType(IntType):
+class KanbanIdType(IntType):  # pragma: no cover
     MESSAGES = {'id_length': "Kanban ids must have 9 digits"}
 
     def to_native(self, value, *args, **kwargs):
         value = super().to_native(value, *args, **kwargs)
 
-        if len(str(value)) != 9:
+        if value is 0:
+            return None
+        elif len(str(value)) != 9:
             raise ValidationError(self.messages['id_length'])
         return value
 
 
-class MongoDateType(DateType):
+class MongoDateType(DateType):  # pragma: no cover
     SERIALIZED_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
     def to_native(self, value, *args, **kwargs):
