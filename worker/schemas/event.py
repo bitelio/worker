@@ -30,7 +30,6 @@ class Event(KanbanModel):
     DateTime = DateTimeType()
     FromLaneId = KanbanIdType(required=False)
     IsUnassigning = BooleanType(required=False)
-    Position = IntType()
     ToLaneId = KanbanIdType(required=False)
     Type = StringType()
     UserId = KanbanIdType()
