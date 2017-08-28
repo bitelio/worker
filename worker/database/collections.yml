@@ -1,40 +1,24 @@
 boards:
   indices: [Id]
-  keys: {BoardId: Id, Id: Id}
   unique: [Id]
 card_types:
   indices: [Id, BoardId]
-  keys: {BoardId: BoardId, Id: Id}
   unique: [Id]
 cards:
   indices: [Id, BoardId]
-  keys: {BoardId: BoardId, Id: Id}
   unique: [Id]
 classes_of_service:
   indices: [Id, BoardId]
-  keys: {BoardId: BoardId, Id: Id}
   unique: [Id]
 events:
   indices: [BoardId, CardId]
-  keys: {BoardId: BoardId, Id: null}
   unique: []
 lanes:
   indices: [Id, BoardId]
-  keys: {BoardId: BoardId, Id: Id}
   unique: [Id]
 users:
   indices: [Id, BoardId]
-  keys: {BoardId: BoardId, Id: Id}
-  unique: []
-phases:
-  indices: [BoardId]
-  keys: {BoardId: BoardId, Id: _id}
-  unique: []
-stations:
-  indices: [BoardId]
-  keys: {BoardId: BoardId, Id: _id}
   unique: []
 settings:
   indices: [BoardId]
-  keys: {BoardId: BoardId, Id: _id}
   unique: [BoardId]

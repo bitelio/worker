@@ -1,19 +1,22 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
-from .connector import db
+from . import db
 
 
-def collection(collection, board_id=None, query=None, projection=None):
-    query = {**({'BoardId': board_id} if board_id else {}), **(query or {})}
-    return list(db[collection].find(query, projection or {'_id': 0}))
+def one(collection, item_id):
+    return db[collection].find_one({'Id': item_id}, {'_id': 0})
 
 
-def field(collection, field, board_id=None):
-    query = {'BoardId': board_id} if board_id else {}
-    documents = list(db[collection].find(query, {field: 1}))
+def many(collection, query=None, projection=None):
+    if isinstance(projection, dict) and '_id' not in projection:
+        projection.update({'_id': 0})
+    return list(db[collection].find(query or {}, projection or {'_id': 0}))
+
+
+def field(collection, field='Id', query=None):
+    projection = {'_id': 0, field: 1} if field is not '_id' else {'_id': 1}
+    documents = many(collection, query, projection)
     return [document[field] for document in documents]
 
 
-def table(key, **kwargs):
-    return {doc[key]: doc for doc in collection(**kwargs)}
+def table(collection, key='Id', query=None, projection=None):
+    # query = {**({'BoardId': board_id} if board_id else {}), **(query or {})}
+    return {doc[key]: doc for doc in many(collection, query, projection)}
