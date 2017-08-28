@@ -35,7 +35,7 @@ class SchemaTest(unittest.TestCase):
 
     def test_card_priority(self):
         card = copy(self.board.cards[100010001])
-        card.priority = 4
+        card['Priority'] = 4
         with self.assertRaises(DataError):
             card = Card(card)
 
@@ -83,7 +83,7 @@ class SchemaTest(unittest.TestCase):
         self.assertEqual(lane, data)
 
     def test_move_event(self):
-        event = {'CardId': 100010003, 'FromLaneId': 100001007, 'Position': 5,
+        event = {'CardId': 100010003, 'FromLaneId': 100001007,
                  'DateTime': datetime.datetime(2017, 2, 27, 13, 58, 4),
                  'ToLaneId': 100001009, 'Type': 'CardMoveEventDTO',
                  'UserId': 100000001, 'BoardId': 100000000}
@@ -91,7 +91,7 @@ class SchemaTest(unittest.TestCase):
         self.assertEqual(data, event)
 
     def test_tag_event(self):
-        event = {'CardId': 100010001, 'Position': 6, 'ToLaneId': 100001004,
+        event = {'CardId': 100010001, 'ToLaneId': 100001004,
                  'DateTime': datetime.datetime(2017, 3, 30, 11, 21, 1),
                  'Type': 'CardFieldsChangedEventDTO', 'UserId': 100000001,
                  'Changes': [{'FieldName': 'Tags', 'NewValue': 'Tag1,Tag2',
@@ -102,13 +102,13 @@ class SchemaTest(unittest.TestCase):
     def test_comment_event(self):
         event = {'CardId': 100010001, 'CommentText': '<p>Comment 1</p>',
                  'DateTime': datetime.datetime(2017, 2, 27, 13, 58, 15),
-                 'Position': 4, 'Type': 'CommentPostEventDTO',
-                 'UserId': 100000001, 'BoardId': 100000000}
+                 'Type': 'CommentPostEventDTO', 'UserId': 100000001,
+                 'BoardId': 100000000}
         data = Event(self.board.cards[100010001].history[-3]).to_native()
         self.assertEqual(data, event)
 
     def test_creation_event(self):
-        event = {'CardId': 100010002, 'Position': 0, 'ToLaneId': 100001001,
+        event = {'CardId': 100010002, 'ToLaneId': 100001001,
                  'DateTime': datetime.datetime(2017, 2, 27, 13, 57, 30),
                  'Type': 'CardCreationEventDTO', 'UserId': 100000001,
                  'BoardId': 100000000}

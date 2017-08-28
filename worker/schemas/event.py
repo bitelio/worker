@@ -1,6 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 from schematics.models import Model
 from schematics.types import IntType
 from schematics.types import ListType

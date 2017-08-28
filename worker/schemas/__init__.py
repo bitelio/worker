@@ -1,6 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 from functools import partialmethod
 from schematics.models import Model
 from schematics.types import BaseType
