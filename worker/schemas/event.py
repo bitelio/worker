@@ -1,5 +1,4 @@
 from schematics.models import Model
-from schematics.types import IntType
 from schematics.types import ListType
 from schematics.types import ModelType
 from schematics.types import StringType
@@ -12,8 +11,8 @@ from .types import KanbanIdType
 
 class Change(Model):
     FieldName = StringType()
-    NewValue = StringType()
-    OldValue = StringType()
+    NewValue = StringType(required=False)
+    OldValue = StringType(required=False)
 
 
 class Event(KanbanModel):
@@ -31,5 +30,6 @@ class Event(KanbanModel):
     Type = StringType()
     UserId = KanbanIdType()
     WipOverrideComment = KanbanIdType(required=False)
+
     class Options:
-        serialize_when_none=False
+        serialize_when_none = False

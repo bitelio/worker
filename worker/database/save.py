@@ -18,7 +18,7 @@ def many(items):
     db[collection].insert_many(convert(items))
     name = mappings.get('name', items[0])
     name = collection.replace('_', ' ')
-    log.info(f'{len(items)} {name} created')
+    # log.info(f'{len(items)} {name} created')
 
 
 def settings(boards):

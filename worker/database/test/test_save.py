@@ -1,23 +1,18 @@
-import unittest
-import mongomock
 import leankitmocks
 from schematics.exceptions import DataError
 
 from worker.database import save
 from worker.schemas.card import Card
 from worker.schemas.user import User
+from worker.database.test.base import DatabaseTest
 
 
-class DatabaseTest(unittest.TestCase):
+class SaveTest(DatabaseTest):
     @classmethod
     def setUpClass(cls):
-        cls.client = mongomock.MongoClient()
-        save.db = cls.client.test
+        super().setUpClass()
+        save.db = cls.db
         cls.board = leankitmocks.Board(100000000)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.client.drop_database('test')
 
     def test_save_one(self):
         user = self.board.users[100000001]

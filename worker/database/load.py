@@ -18,5 +18,4 @@ def field(collection, field='Id', query=None):
 
 
 def table(collection, key='Id', query=None, projection=None):
-    # query = {**({'BoardId': board_id} if board_id else {}), **(query or {})}
     return {doc[key]: doc for doc in many(collection, query, projection)}

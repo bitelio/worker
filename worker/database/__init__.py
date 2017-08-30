@@ -10,7 +10,7 @@ def init():
     log.info('Checking database')
     filename = path.join(path.dirname(__file__), 'collections.yml')
     with open(filename) as models:
-        collections = yaml.load(models)
+        collections = yaml.safe_load(models)
     names = db.collection_names()
     for name, options in collections.items():
         if name not in names:
