@@ -10,14 +10,15 @@ from .types import KanbanIdType
 
 
 class Card(KanbanModel):
+    # Description, ExternalCardID and BlockReason can be an empty string or None
     AssignedUserId = KanbanIdType(required=False)
-    BlockReason = StringType()
+    BlockReason = StringType(required=False)
     BoardId = KanbanIdType()
     ClassOfServiceId = KanbanIdType(required=False)
     DateArchived = DateType(required=False)
-    Description = StringType()
+    Description = StringType(required=False)
     DueDate = DateType(required=False)
-    ExternalCardID = StringType()
+    ExternalCardID = StringType(required=False)
     Id = KanbanIdType()
     IsBlocked = BooleanType()
     LastActivity = DateTimeType()

@@ -4,10 +4,10 @@ from schematics.exceptions import DataError
 from worker.database import save
 from worker.schemas.card import Card
 from worker.schemas.user import User
-from worker.database.test.base import DatabaseTest
+from worker.test.base import BaseTest
 
 
-class SaveTest(DatabaseTest):
+class SaveTest(BaseTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

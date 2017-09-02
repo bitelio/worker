@@ -5,10 +5,10 @@ from worker.database import delete
 from worker.database import update
 from worker.schemas.card import Card
 from worker.schemas.user import User
-from worker.database.test.base import DatabaseTest
+from worker.test.base import BaseTest
 
 
-class DeleteTest(DatabaseTest):
+class DeleteTest(BaseTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

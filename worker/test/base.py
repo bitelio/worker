@@ -2,7 +2,7 @@ import unittest
 import mongomock
 
 
-class DatabaseTest(unittest.TestCase):
+class BaseTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = mongomock.MongoClient()

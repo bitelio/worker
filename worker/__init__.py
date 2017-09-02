@@ -1,15 +1,13 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 import time
-# import raven
+import raven
 import signal
 import logging
 import leankit
 
 from . import config
 from . import database
-# from . import compare
+from . import updater
+
 
 __author__ = "Guillermo Guirao Aguilar"
 __email__ = "info@bitelio.com"
@@ -17,15 +15,18 @@ __version__ = "0.0.1"
 
 
 log = logging.getLogger(__name__)
-# sentry = raven.Client()
+sentry = raven.Client()
 
 
 class Worker:
+    # TODO: mongo lock -> avoid two workers running
+    # server microservice -> refresh, remove, etc.
+
     def __init__(self, throttle=None):
         self.kill = False
         self.throttle = throttle or config.THROTTLE
         self.version = {board['Id']: board['Version'] for board in
-                        database.load.collection('boards')}
+                        database.load.many('boards')}
 
         signal.signal(signal.SIGINT, self.exit)
         signal.signal(signal.SIGTERM, self.exit)
@@ -35,6 +36,7 @@ class Worker:
         self.kill = True
 
     def run(self):  # pragma: nocover
+        self.refresh()
         while not self.kill:
             try:
                 last_update = time.time()
@@ -43,6 +45,7 @@ class Worker:
                 sentry.captureException()
             finally:
                 self.sleep(self.throttle + last_update - time.time())
+        logging.shutdown()
 
     def sleep(self, seconds):
         while seconds > 0:
@@ -51,51 +54,35 @@ class Worker:
             if self.kill:
                 break
 
-    def populate(self):
-        """ Populates the settings collections with all available boards """
-        log.info('Populating database')
-        boards = leankit.get_boards()
-        ids = database.load.field('settings', 'Id')
-        new = [board for board in boards if board.id not in ids]
-        if new:
-            database.save.collection('settings', new)
-
     def sync(self):
-        settings = database.load.settings(query={'Sync': True})
-        for board in settings:
-            self.populate()
-            self.sync()
-        else:
-            for board in settings:
-                self.check(board)
+        board_ids = database.load.field('settings', 'BoardId', {'Sync': True})
+        for board_id in board_ids:
+            updater.run(board_id, self.version.get(board_id))
 
-    def check(self, board_id):
-        version = self.version.get(board_id, 0)
-        board = leankit.get_newer_if_exists(board_id, version, config.timezone)
-        if board:
-            log.info('Updating {0} ({0.id}) to v{0.version}'.format(board))
-            if version == 0:
-                # Deactivate logging
-                board.get_archive()
-            self.update(board)
+    @staticmethod
+    def refresh():
+        # TODO: lock file
+        log.info('Checking for new boards')
+        boards = leankit.get_boards()
+        board_ids = database.load.field('settings', 'BoardId')
+        new_boards = [board for board in boards if board['Id'] not in board_ids]
+        if new_boards:
+            database.save.settings(new_boards)
 
-    def update(self, board):
-        # compare.lanes(board)
-        # lanes & others
-        # cards
-        # history
-        pass
+    @staticmethod
+    def reset():
+        raise NotImplemented
 
-    def archive(self, board):
-        """ Check for new cards in archive """
-        if board.top_level_archive_lane_id not in board.lanes:
-            board.get_archive()
+    @staticmethod
+    def remove(board_id):
+        raise NotImplemented
 
 
 def run():  # pragma: nocover
+    log = logging.getLogger(__name__)
     stream_handler = logging.StreamHandler()
     log.setLevel(config.LOGGING)
     log.addHandler(stream_handler)
     log.info("Starting worker")
-    worker = Worker(config.throttle)
+    worker = Worker(config.THROTTLE)
     worker.run()

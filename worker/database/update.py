@@ -4,7 +4,6 @@ from . import save
 from . import delete
 from . import convert
 from .. import mappings
-from ..schemas.setting import Setting
 
 
 def one(item):

@@ -1,10 +1,10 @@
 from copy import deepcopy
 
-from worker.database.test.base import DatabaseTest
 from worker.database import load
+from worker.test.base import BaseTest
 
 
-class LoadTest(DatabaseTest):
+class LoadTest(BaseTest):
     data = [{'Id': 1, 'Color': True}, {'Id': 2, 'Color': False}]
 
     @classmethod
