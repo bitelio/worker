@@ -71,11 +71,11 @@ class Worker:
 
     @staticmethod
     def reset():
-        raise NotImplemented
+        raise NotImplementedError
 
     @staticmethod
     def remove(board_id):
-        raise NotImplemented
+        raise NotImplementedError
 
 
 def run():  # pragma: nocover

@@ -2,14 +2,12 @@ import logging
 import leankit
 from pymongo.errors import DuplicateKeyError
 
-from . import schemas
 from . import mappings
 from .database import save
 from .database import load
 from .database import update
 from .database import delete
 
-from pprint import pprint
 
 log = logging.getLogger(__name__)
 
@@ -21,10 +19,6 @@ class Updater:
         self.version = version
         self.archive = False
 
-    def log(self, item, event):
-        name = mappings.get('name', item)
-        log.info(f'{name} {event} {item} ({item.id})')
-
     def run(self):
         # TODO: lock file
         if self.version:
@@ -33,7 +27,8 @@ class Updater:
             self.populate()
         # release lock file
 
-    def convert(self, item):
+    @staticmethod
+    def convert(item):
         if isinstance(item, leankit.kanban.Converter):
             return mappings.get('schema', item)(item).to_native()
         elif isinstance(item, dict):
