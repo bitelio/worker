@@ -1,6 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 from copy import copy
 import unittest
 import datetime
@@ -30,6 +27,7 @@ class SchemaTest(unittest.TestCase):
                 'LastActivity': datetime.datetime(2017, 2, 27, 13, 58, 4),
                 'LastMove': datetime.datetime(2017, 2, 27, 13, 58, 4),
                 'Size': 0, 'Tags': [], 'Title': 'Task 1', 'BoardId': 100000000}
+        card['DateArchived'] = datetime.datetime(2017, 2, 27)
         data = Card(self.board.cards[100010003]).to_native()
         self.assertEqual(card, data)
 

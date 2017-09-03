@@ -3,21 +3,18 @@ import leankit
 from pymongo.errors import DuplicateKeyError
 
 from . import mappings
-from .database import save
-from .database import load
-from .database import update
-from .database import delete
+from . import database
 
 
 log = logging.getLogger(__name__)
 
 
 class Updater:
-    def __init__(self, board_id, version):
+    def __init__(self, board_id, version, timezone):
         self.board_id = board_id
         self.id = board_id
         self.version = version
-        self.archive = False
+        self.timezone = timezone
 
     def run(self):
         # TODO: lock file
@@ -48,53 +45,56 @@ class Updater:
         return True
 
     def update(self):
-        self.board = leankit.get_newer_if_exists(self.id, self.version)
-        board = load.one('boards', self.board.id)
+        log.debug(f'Checking board {self.id} for updates')
+        self.board = leankit.get_newer_if_exists(self.id, self.version,
+                                                 self.timezone)
         if self.board:
+            log.debug(f'Updating board {self.board.id} to v{self.version}')
+            board = database.load.one('boards', self.board.id)
             if not self.equal(board, self.board):
-                update.one(self.board)
+                database.update.one(self.board)
             self.update_collections()
             self.update_cards()
 
     def populate(self):
-        print('-'*40)
-        self.board = leankit.Board(self.board_id)
+        log.info(f'Populating board {self.id}')
+        self.board = leankit.Board(self.board_id, self.timezone)
         self.board.get_archive()
-        self.archive = True
-        save.one(self.board)
+        database.save.one(self.board)
         types = ['lanes', 'cards', 'users', 'card_types', 'classes_of_service']
         for collection in types:
-            save.many(getattr(self.board, collection).values())
+            database.save.many(getattr(self.board, collection).values())
         cards = self.board.cards.values()
         events = [events for card in cards for events in card.history]
-        save.many(events)
+        database.save.many(events)
 
     def update_collections(self):
         collections = ['lanes', 'users', 'card_types', 'classes_of_service']
         query = {'BoardId': self.board.id}
         for collection in collections:
-            items = load.table(collection, query=query)
+            items = database.load.table(collection, query=query)
             for item_id, item in getattr(self.board, collection).items():
                 if item_id not in items:
-                    save.one(item)
+                    database.save.one(item)
                 elif not self.equal(items[item_id], item):
-                    update.one(item)
+                    database.update.one(item)
             for item_id in items:
                 if item_id not in getattr(self.board, collection):
-                    delete.one(collection, item_id)
+                    database.delete.one(collection, item_id)
 
     def update_cards(self):
         query = {'BoardId': self.board.id, 'DateArchived': None}
-        cards = load.table('cards', query=query)
+        cards = database.load.table('cards', query=query, timezone=self.timezone)
         for card_id, card in self.board.cards.items():
             if card_id not in cards:
                 try:
-                    save.card(card)
+                    database.save.card(card)
                 except DuplicateKeyError:
-                    update.card(card)
+                    log.warning(f'Card {card_id} found as duplicate')
+                    database.update.card(card)
             else:
                 if card['LastActivity'] != cards[card_id]['LastActivity']:
-                    update.card(card)
+                    database.update.card(card)
 
         for card_id in cards:
             if card_id not in self.board.cards:
@@ -104,11 +104,12 @@ class Updater:
                     del archived['ActualStartDate']
                     del archived['ActualFinishDate']
                     # ------------------------------------
-                    update.card(archived)
+                    database.update.card(archived)
                 else:
-                    delete.card(card_id)
+                    database.delete.card(card_id)
 
 
-def run(board_id, version):
-    updater = Updater(board_id, version)
+def run(board_id, version, timezone='UTC'):
+    updater = Updater(board_id, version, timezone)
     updater.run()
+    return getattr(updater.board, 'version', version)

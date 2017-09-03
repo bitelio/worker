@@ -1,6 +1,6 @@
 import leankitmocks
 
-from worker import updater
+from worker import handler
 from worker.test.base import BaseTest
 from worker.database import save
 from worker.database import load
@@ -8,12 +8,12 @@ from worker.database import update
 from worker.database import delete
 
 
-class UpdaterTest(BaseTest):
+class HandlerTest(BaseTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         save.db = load.db = update.db = delete.db = cls.db
-        updater.run(100000000, None)
+        handler.run(100000000, None)
 
     def _test_collection_(self, collection):
         expected = len(getattr(self.board, collection))
@@ -21,7 +21,7 @@ class UpdaterTest(BaseTest):
         self.assertEqual(expected, actual)
 
 
-class PopulateTest(UpdaterTest):
+class PopulateTest(HandlerTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -53,13 +53,13 @@ class PopulateTest(UpdaterTest):
         self.assertEqual(self.board.id, self.db.boards.find_one()['Id'])
 
 
-class UpdateTest(UpdaterTest):
+class UpdateTest(HandlerTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.board = leankitmocks.get_newer_if_exists(100000000, 1)
         cls.board.get_archive()
-        updater.run(100000000, 1)
+        handler.run(100000000, 1)
 
     def test_cards(self):
         self._test_collection_('cards')

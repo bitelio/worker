@@ -6,7 +6,7 @@ import leankit
 
 from . import config
 from . import database
-from . import updater
+from . import handler
 
 
 __author__ = "Guillermo Guirao Aguilar"
@@ -36,6 +36,7 @@ class Worker:
         self.kill = True
 
     def run(self):  # pragma: nocover
+        log.info("Starting worker")
         self.refresh()
         while not self.kill:
             try:
@@ -55,16 +56,18 @@ class Worker:
                 break
 
     def sync(self):
-        board_ids = database.load.field('settings', 'BoardId', {'Sync': True})
-        for board_id in board_ids:
-            updater.run(board_id, self.version.get(board_id))
+        boards = database.load.many('settings', {'Update': True})
+        for board in boards:
+            version = self.version.get(board['Id'])
+            version = handler.run(board['Id'], version, board['Timezone'])
+            self.version[board['Id']] = version
 
     @staticmethod
     def refresh():
         # TODO: lock file
         log.info('Checking for new boards')
         boards = leankit.get_boards()
-        board_ids = database.load.field('settings', 'BoardId')
+        board_ids = database.load.field('settings', 'Id')
         new_boards = [board for board in boards if board['Id'] not in board_ids]
         if new_boards:
             database.save.settings(new_boards)
@@ -79,10 +82,8 @@ class Worker:
 
 
 def run():  # pragma: nocover
-    log = logging.getLogger(__name__)
-    stream_handler = logging.StreamHandler()
-    log.setLevel(config.LOGGING)
-    log.addHandler(stream_handler)
-    log.info("Starting worker")
+    from logging.config import dictConfig
+    dictConfig(config.logging)
+    database.init()
     worker = Worker(config.THROTTLE)
     worker.run()

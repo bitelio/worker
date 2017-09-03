@@ -1,12 +1,12 @@
 from schematics.types import IntType
 from schematics.types import ListType
-from schematics.types import DateType
 from schematics.types import StringType
 from schematics.types import BooleanType
 from schematics.types import DateTimeType
 
 from .models import KanbanModel
 from .types import KanbanIdType
+from .types import MongoDateType
 
 
 class Card(KanbanModel):
@@ -15,9 +15,9 @@ class Card(KanbanModel):
     BlockReason = StringType(required=False)
     BoardId = KanbanIdType()
     ClassOfServiceId = KanbanIdType(required=False)
-    DateArchived = DateType(required=False)
+    DateArchived = MongoDateType(required=False)
     Description = StringType(required=False)
-    DueDate = DateType(required=False)
+    DueDate = MongoDateType(required=False)
     ExternalCardID = StringType(required=False)
     Id = KanbanIdType()
     IsBlocked = BooleanType()

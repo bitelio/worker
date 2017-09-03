@@ -1,9 +1,13 @@
+import logging
+
 from . import db
-from . import log
 from . import save
 from . import delete
 from . import convert
 from .. import mappings
+
+
+log = logging.getLogger(__name__)
 
 
 def one(item):

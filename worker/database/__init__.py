@@ -3,18 +3,19 @@ import logging
 from os import path
 
 from .connector import db
-from .. import mappings
+from worker import config
+from worker import mappings
+
+
+log = logging.getLogger(__name__)
 
 
 def init():
     log.info('Checking database')
-    filename = path.join(path.dirname(__file__), 'collections.yml')
-    with open(filename) as models:
-        collections = yaml.safe_load(models)
     names = db.collection_names()
-    for name, options in collections.items():
+    for name, options in config.collections.items():
         if name not in names:
-            log.info('Creating collection: {name}')
+            log.info(f'Creating collection: {name}')
             for index in options['indices']:
                 unique = index in options['unique']
                 db[name].create_index(index, unique=unique)
@@ -24,8 +25,3 @@ def convert(items):
     def do(value):
         return mappings.get('schema', value)(value).to_native()
     return [do(val) for val in items] if isinstance(items, list) else do(items)
-
-
-log = logging.getLogger('worker.database')
-elk = logging.getLogger('worker.elk')
-# init()

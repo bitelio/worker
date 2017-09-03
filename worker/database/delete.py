@@ -1,5 +1,9 @@
+import logging
+
 from . import db
-from . import log
+
+
+log = logging.getLogger(__name__)
 
 
 def one(collection, item_id):

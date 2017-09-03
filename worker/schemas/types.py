@@ -1,6 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 from datetime import datetime, date
 from schematics.types import IntType
 from schematics.types import DateType
@@ -8,16 +5,17 @@ from schematics.exceptions import ValidationError
 
 
 class KanbanIdType(IntType):  # pragma: no cover
-    MESSAGES = {'id_length': "Kanban ids must have 9 digits"}
+    MESSAGES = {'id_length': "Kanban ids must have 8 or 9 digits"}
 
     def to_native(self, value, *args, **kwargs):
         value = super().to_native(value, *args, **kwargs)
 
         if value is 0:
             return None
-        elif len(str(value)) != 9:
+        elif 7 < len(str(value)) < 10:
+            return value
+        else:
             raise ValidationError(self.messages['id_length'])
-        return value
 
 
 class MongoDateType(DateType):  # pragma: no cover

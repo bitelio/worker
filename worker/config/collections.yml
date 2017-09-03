@@ -20,5 +20,5 @@ users:
   indices: [Id, BoardId]
   unique: []
 settings:
-  indices: [BoardId]
-  unique: [BoardId]
+  indices: [Id]
+  unique: [Id]

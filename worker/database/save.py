@@ -1,8 +1,12 @@
+import logging
+
 from . import db
-from . import log
 from . import convert
 from .. import mappings
 from ..schemas.setting import Setting
+
+
+log = logging.getLogger(__name__)
 
 
 def one(item):
