@@ -2,7 +2,7 @@
 
 install:
 	if [ ! -d env ]; then python3 -m venv env; fi
-	env/bin/python setup.py develop
+	env/bin/python3 setup.py develop
 
 test:
 	python3 setup.py nosetests
