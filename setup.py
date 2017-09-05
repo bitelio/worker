@@ -15,7 +15,6 @@ setup(name='worker',
       author_email='info@bitelio.com',
       url='https://github.com/bitelio/worker',
       install_requires=['raven', 'leankit', 'schematics', 'pymongo', 'PyYAML'],
-      setup_requires=['nose', 'rednose', 'coverage', 'leankitmocks', 'mongomock'],
-      classifiers=['Programming Language :: Python :: 3.5'],
-      entry_points={'console_scripts': ['run = worker:run',
-                                        'refresh = worker:refresh']})
+      setup_requires=['nose', 'rednose', 'coverage', 'leankitmocks',
+                      'mongomock'],
+      entry_points={'console_scripts': ['run = worker:run']})
