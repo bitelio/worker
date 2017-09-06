@@ -17,4 +17,4 @@ setup(name='worker',
       install_requires=['raven', 'leankit', 'schematics', 'pymongo', 'PyYAML'],
       setup_requires=['nose', 'rednose', 'coverage', 'leankitmocks',
                       'mongomock'],
-      entry_points={'console_scripts': ['run = worker:run']})
+      entry_points={'console_scripts': ['worker = worker:run']})

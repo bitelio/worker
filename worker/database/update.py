@@ -1,9 +1,9 @@
 import logging
 
-from . import db
+from . import mongo
 from . import save
 from . import delete
-from . import convert
+from . import utils
 from .. import mappings
 
 
@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 def one(item):
     collection = mappings.get('collection', item)
-    db[collection].replace_one({'Id': item['Id']}, convert(item))
+    mongo.db[collection].replace_one({'Id': item['Id']}, utils.convert(item))
     name = mappings.get('name', item)
     log.info(f'{name} updated: {item} ({item.id})')
 

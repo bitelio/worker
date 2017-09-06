@@ -1,7 +1,5 @@
 import leankitmocks
 
-from worker.database import save
-from worker.database import delete
 from worker.database import update
 from worker.schemas.card import Card
 from worker.schemas.user import User
@@ -12,7 +10,6 @@ class DeleteTest(BaseTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        update.db = save.db = delete.db = cls.db
         cls.board = leankitmocks.Board(100000000)
 
     def test_update_one(self):

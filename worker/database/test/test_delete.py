@@ -6,7 +6,6 @@ class DeleteTest(BaseTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        delete.db = cls.db
 
     def test_delete_one(self):
         self.db.things.insert_one({'Id': 1})

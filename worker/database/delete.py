@@ -1,18 +1,18 @@
 import logging
 
-from . import db
+from . import mongo
 
 
 log = logging.getLogger(__name__)
 
 
 def one(collection, item_id):
-    db[collection].delete_one({'Id': item_id})
+    mongo.db[collection].delete_one({'Id': item_id})
     log.info(f'Item removed: ({item_id})')
 
 
 def many(collection, query):
-    db[collection].delete_many(query)
+    mongo.db[collection].delete_many(query)
 
 
 def card(card_id):

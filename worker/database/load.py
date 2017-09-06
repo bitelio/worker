@@ -2,7 +2,7 @@ import logging
 from pytz import timezone as tz
 from bson.codec_options import CodecOptions
 
-from . import db
+from . import mongo
 
 
 log = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ def table(collection, key='Id', query=None, projection=None, timezone='UTC'):
 def _cursor_(collection, timezone):
     if timezone:
         codec_options = CodecOptions(tz_aware=True, tzinfo=tz(timezone))
-        return db[collection].with_options(codec_options)
+        return mongo.db[collection].with_options(codec_options)
     else:
-        return db[collection]
+        return mongo.db[collection]
 

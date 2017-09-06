@@ -12,8 +12,7 @@ class LoadTest(BaseTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load.db = cls.db
-        load.db.items.insert_many(deepcopy(cls.data))
+        cls.db.items.insert_many(deepcopy(cls.data))
 
     def test_load_one(self):
         self.assertEqual(self.data[0], load.one('items', 1))
