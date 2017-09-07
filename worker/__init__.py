@@ -3,10 +3,12 @@ import raven
 import signal
 import logging
 import leankit
+import traceback
 
 from . import config
 from . import database
 from . import handler
+from . import alerts
 
 
 __author__ = "Guillermo Guirao Aguilar"
@@ -24,6 +26,7 @@ class Worker:
 
     def __init__(self, throttle=None):
         self.kill = False
+        self.alert = alerts.SendGrid()
         self.version = {board['Id']: board['Version'] for board in
                         database.load.many('boards')}
         try:
@@ -45,14 +48,13 @@ class Worker:
             try:
                 last_update = time.time()
                 self.sync()
+                factor = 1
             except Exception as error:
                 sentry.captureException()
-                if error != ConnectionError or error != IOError:
-                    log.fatal(error)
-                    raise error
                 log.error(error)
-            finally:
-                self.sleep(self.throttle + last_update - time.time())
+                self.alert.send(error, traceback.print_exc())
+                factor += 1
+            self.sleep(self.throttle * factor + last_update - time.time())
         logging.shutdown()
 
     def sleep(self, seconds):
@@ -65,9 +67,15 @@ class Worker:
     def sync(self):
         boards = database.load.many('settings', {'Update': True})
         for board in boards:
+            if board['Reindex']:
+                self.reindex(board)
             version = self.version.get(board['Id'])
             version = handler.run(board['Id'], version)
             self.version[board['Id']] = version
+
+    def reindex(self, board):
+        """ Recompute event time intervals """
+        events = database.load.many('events', {'BoardId': board['Id']})
 
     @staticmethod
     def refresh():
