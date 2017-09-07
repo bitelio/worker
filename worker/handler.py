@@ -2,6 +2,7 @@ import logging
 import leankit
 from pymongo.errors import DuplicateKeyError
 
+from . import config
 from . import mappings
 from . import database
 
@@ -10,11 +11,11 @@ log = logging.getLogger(__name__)
 
 
 class Updater:
-    def __init__(self, board_id, version, timezone):
+    def __init__(self, board_id, version):
         self.board_id = board_id
         self.id = board_id
         self.version = version
-        self.timezone = timezone
+        self.timezone = config.TIMEZONE
 
     def run(self):
         # TODO: lock file
@@ -46,8 +47,8 @@ class Updater:
 
     def update(self):
         log.debug(f'Checking board {self.id} for updates')
-        self.board = leankit.get_newer_if_exists(self.id, self.version,
-                                                 self.timezone)
+        arguments = self.id, self.version, self.timezone
+        self.board = leankit.get_newer_if_exists(*arguments)
         if self.board:
             log.debug(f'Updating board {self.board.id} to v{self.version}')
             board = database.load.one('boards', self.board.id)
@@ -55,6 +56,7 @@ class Updater:
                 database.update.one(self.board)
             self.update_collections()
             self.update_cards()
+            self.version = self.board.version
 
     def populate(self):
         log.info(f'Populating board {self.id}')
@@ -67,6 +69,7 @@ class Updater:
         cards = self.board.cards.values()
         events = [events for card in cards for events in card.history]
         database.save.many(events)
+        self.version = self.board.version
 
     def update_collections(self):
         collections = ['lanes', 'users', 'card_types', 'classes_of_service']
@@ -84,7 +87,8 @@ class Updater:
 
     def update_cards(self):
         query = {'BoardId': self.board.id, 'DateArchived': None}
-        cards = database.load.table('cards', query=query, timezone=self.timezone)
+        options = {'query': query, 'timezone': self.timezone}
+        cards = database.load.table('cards', **options)
         for card_id, card in self.board.cards.items():
             if card_id not in cards:
                 try:
@@ -98,18 +102,20 @@ class Updater:
 
         for card_id in cards:
             if card_id not in self.board.cards:
-                archived = self.board.get_card(card_id)
-                if archived:
-                    # Remove when Leankit fixes bug 111106
-                    del archived['ActualStartDate']
-                    del archived['ActualFinishDate']
-                    # ------------------------------------
-                    database.update.card(archived)
-                else:
+                try:
+                    card = self.board.get_card(card_id)
+                    if card.lane:
+                        # If it doesn't have a lane, the card has become a task
+                        # Remove when Leankit fixes bug 111106
+                        del card['ActualStartDate']
+                        del card['ActualFinishDate']
+                        # ------------------------------------
+                        database.update.card(card)
+                except ConnectionError:
                     database.delete.card(card_id)
 
 
-def run(board_id, version, timezone='UTC'):
-    updater = Updater(board_id, version, timezone)
+def run(board_id, version):
+    updater = Updater(board_id, version)
     updater.run()
-    return getattr(updater.board, 'version', version)
+    return updater.version

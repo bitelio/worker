@@ -11,7 +11,7 @@ from . import handler
 
 __author__ = "Guillermo Guirao Aguilar"
 __email__ = "info@bitelio.com"
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 
 log = logging.getLogger(__name__)
@@ -24,9 +24,12 @@ class Worker:
 
     def __init__(self, throttle=None):
         self.kill = False
-        self.throttle = throttle or config.THROTTLE
         self.version = {board['Id']: board['Version'] for board in
                         database.load.many('boards')}
+        try:
+            self.throttle = int(throttle or config.THROTTLE)
+        except ValueError:
+            self.throttle = 60
 
         signal.signal(signal.SIGINT, self.exit)
         signal.signal(signal.SIGTERM, self.exit)
@@ -42,8 +45,12 @@ class Worker:
             try:
                 last_update = time.time()
                 self.sync()
-            except ConnectionError:
+            except Exception as error:
                 sentry.captureException()
+                if error != ConnectionError or error != IOError:
+                    log.fatal(error)
+                    raise error
+                log.error(error)
             finally:
                 self.sleep(self.throttle + last_update - time.time())
         logging.shutdown()
@@ -59,7 +66,7 @@ class Worker:
         boards = database.load.many('settings', {'Update': True})
         for board in boards:
             version = self.version.get(board['Id'])
-            version = handler.run(board['Id'], version, board['Timezone'])
+            version = handler.run(board['Id'], version)
             self.version[board['Id']] = version
 
     @staticmethod
@@ -85,5 +92,5 @@ def run():  # pragma: nocover
     from logging.config import dictConfig
     dictConfig(config.logging)
     database.init()
-    worker = Worker(config.THROTTLE)
+    worker = Worker()
     worker.run()

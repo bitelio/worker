@@ -31,7 +31,7 @@ def field(collection, field='Id', query=None):
     return [document[field] for document in documents if field in document]
 
 
-def table(collection, key='Id', query=None, projection=None, timezone='UTC'):
+def table(collection, key='Id', query=None, projection=None, timezone=None):
     return {doc[key]: doc for doc in
             many(collection, query, projection, timezone) if key in doc}
 

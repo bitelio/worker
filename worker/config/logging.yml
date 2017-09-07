@@ -4,7 +4,7 @@ disable_existing_loggers: False
 formatters:
   default:
     style: "{"
-    format: "{asctime} │ {levelname:<7} │ {message}"
+    format: "{asctime} │ {levelname:<8} │ {message}"
   simple:
     format: "%(message)s"
 
@@ -29,7 +29,7 @@ loggers:
     handlers: [console, file]
     propagate: False
   leankit:
-    level: DEBUG
+    level: INFO
     handlers: [console]
     propagate: False
 

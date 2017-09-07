@@ -29,7 +29,7 @@ class Event(KanbanModel):
     ToLaneId = KanbanIdType(required=False)
     Type = StringType()
     UserId = KanbanIdType()
-    WipOverrideComment = KanbanIdType(required=False)
+    WipOverrideComment = StringType(required=False)
 
     class Options:
         serialize_when_none = False
