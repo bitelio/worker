@@ -1,18 +1,12 @@
-import leankitmocks
 from schematics.exceptions import DataError
 
 from worker.database import save
 from worker.schemas.card import Card
 from worker.schemas.user import User
-from worker.test.base import BaseTest
+from .mock import MockTest
 
 
-class SaveTest(BaseTest):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.board = leankitmocks.Board(100000000)
-
+class SaveTest(MockTest):
     def test_save_one(self):
         user = self.board.users[100000001]
         save.one(user)

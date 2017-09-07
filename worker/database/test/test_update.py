@@ -1,17 +1,10 @@
-import leankitmocks
-
 from worker.database import update
 from worker.schemas.card import Card
 from worker.schemas.user import User
-from worker.test.base import BaseTest
+from .mock import MockTest
 
 
-class DeleteTest(BaseTest):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.board = leankitmocks.Board(100000000)
-
+class DeleteTest(MockTest):
     def test_update_one(self):
         user = self.board.users[100000001]
         self.db.users.insert_one(User(user).to_native())

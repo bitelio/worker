@@ -3,10 +3,6 @@ from worker.test.base import BaseTest
 
 
 class DeleteTest(BaseTest):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-
     def test_delete_one(self):
         self.db.things.insert_one({'Id': 1})
         delete.one('things', 1)
