@@ -7,7 +7,7 @@ from worker.test.base import BaseTest
 
 
 class LoadTest(BaseTest):
-    data = [{'Id': 1, 'Color': True}, {'Id': 2, 'Color': False}]
+    data = [{'Id': 2, 'Color': False}, {'Id': 1, 'Color': True}]
 
     @classmethod
     def setUpClass(cls):
@@ -15,27 +15,33 @@ class LoadTest(BaseTest):
         cls.db.items.insert_many(deepcopy(cls.data))
 
     def test_load_one(self):
-        self.assertEqual(self.data[0], load.one('items', 1))
+        self.assertEqual(self.data[1], load.one('items', 1))
 
     def test_load_one_missing(self):
         self.assertEqual(None, load.one('items', 0))
 
     def test_load_many(self):
-        self.assertEqual(self.data, load.many('items'))
+        actual = load.many('items')
+        self.assertIn(self.data[0], actual)
+        self.assertIn(self.data[1], actual)
 
     def test_load_many_with_query(self):
-        self.assertEqual([self.data[1]], load.many('items', {'Color': False}))
+        self.assertEqual([self.data[0]], load.many('items', {'Color': False}))
 
     def test_load_many_with_projection(self):
-        expected = [{'Id': 1}, {'Id': 2}]
+        items = [{'Id': 1}, {'Id': 2}]
         actual = load.many('items', projection={'Id': 1})
-        self.assertEqual(expected, actual)
+        self.assertIn(items[0], actual)
+        self.assertIn(items[1], actual)
 
     def test_load_field(self):
-        self.assertEqual([1, 2], load.field('items'))
+        self.assertIn(1, load.field('items'))
+        self.assertIn(2, load.field('items'))
 
     def test_load_field_color(self):
-        self.assertEqual([True, False], load.field('items', 'Color'))
+        actual = load.field('items', 'Color')
+        self.assertIn(True, actual)
+        self.assertIn(False, actual)
 
     def test_load_field_with_query(self):
         self.assertEqual([1], load.field('items', query={'Id': 1}))
@@ -70,3 +76,8 @@ class LoadTest(BaseTest):
         self.db.dates.insert_one({'Id': 2, 'Date': date})
         actual = load.one('dates', 2, 'Europe/Berlin')['Date']
         self.assertEqual(str(date), str(actual))
+
+    def test_load_sorted(self):
+        expected = [{'Id': 1}, {'Id': 2}]
+        actual = load.many('items', projection={'Id': 1}, sort='Id')
+        self.assertEqual(expected, actual)

@@ -13,7 +13,7 @@ def one(collection, item_id, timezone=None):
     return _cursor_(collection, timezone).find_one({'Id': item_id}, {'_id': 0})
 
 
-def many(collection, query=None, projection=None, timezone=None):
+def many(collection, query=None, projection=None, timezone=None, sort=None):
     if isinstance(projection, dict) and '_id' not in projection:
         projection.update({'_id': 0})
     items = collection.replace('_', ' ')
@@ -22,7 +22,10 @@ def many(collection, query=None, projection=None, timezone=None):
     else:
         log.debug(f'Loading all {items}')
     args = (query or {}, projection or {'_id': 0})
-    return list(_cursor_(collection, timezone).find(*args))
+    results = _cursor_(collection, timezone).find(*args)
+    if sort:
+        results.sort(sort)
+    return list(results)
 
 
 def field(collection, field='Id', query=None):
