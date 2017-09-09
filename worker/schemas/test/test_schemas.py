@@ -68,7 +68,7 @@ class SchemaTest(unittest.TestCase):
         board = {'ArchiveTopLevelLaneId': 100001008, 'Title': 'Board 100000000',
                  'TopLevelLaneIds': [100001002, 100001003], 'Id': 100000000,
                  'Version': 16, 'AvailableTags': ['Tag1', 'Tag2'],
-                 'BacklogTopLevelLaneId': 100001001}
+                 'BacklogTopLevelLaneId': 100001001, 'Reindex': False}
         data = Board(self.board).to_native()
         self.assertEqual(board, data)
 
