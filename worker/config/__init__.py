@@ -13,6 +13,9 @@ MONGODB = getenv('MONGODB_URI', 'localhost')
 DATABASE = getenv('DATABASE', 'kanban')
 THROTTLE = getenv('THROTTLE', 60)
 TIMEZONE = getenv('TIMEZONE', 'Europe/Berlin')
+SENDGRID = {'APIKEY': getenv('SENDGRID_APIKEY'),
+            'SENDER': getenv('SENDGRID_SENDER'),
+            'RECEIVER': getenv('SENDGRID_RECEIVER')}
 
 collections = load('collections')
 logging = load('logging')
