@@ -9,15 +9,17 @@ credentials = {'APIKEY': 'X', 'SENDER': 's@x.com', 'RECEIVER': 'r@x.com'}
 
 
 class AlertsTest(TestCase):
-    def test_does_nothing(self):
+    @staticmethod
+    def test_does_nothing():
         alert = alerts.SendGrid()
         alert.log.info = MagicMock()
         alert.send('', '')
         alert.log.info.assert_not_called()
 
+    @staticmethod
     @patch('worker.alerts.SendGrid.post')
     @patch('worker.config.SENDGRID', credentials)
-    def test_send(self, post_mock):
+    def test_send(post_mock):
         response = MagicMock()
         response.status_code = 200
         post_mock.return_value = response

@@ -22,12 +22,12 @@ class SchemaTest(unittest.TestCase):
     def test_card(self):
         card = {'AssignedUserId': None, 'BlockReason': '', 'IsBlocked': False,
                 'ClassOfServiceId': None, 'TypeId': 100000015, 'Priority': 1,
-                'DateArchived': datetime.date(2017, 2, 27), 'Id': 100010003,
+                'DateArchived': datetime.date(2017, 3, 2), 'Id': 100010003,
                 'Description': '', 'DueDate': None, 'ExternalCardID': '',
-                'LastActivity': datetime.datetime(2017, 2, 27, 13, 58, 4),
-                'LastMove': datetime.datetime(2017, 2, 27, 13, 58, 4),
+                'LastActivity': datetime.datetime(2017, 3, 2, 13),
+                'LastMove': datetime.datetime(2017, 3, 2, 13),
                 'Size': 0, 'Tags': [], 'Title': 'Task 1', 'BoardId': 100000000}
-        card['DateArchived'] = datetime.datetime(2017, 2, 27)
+        card['DateArchived'] = datetime.datetime(2017, 3, 2)
         data = Card(self.board.cards[100010003]).to_native()
         self.assertEqual(card, data)
 
@@ -82,7 +82,7 @@ class SchemaTest(unittest.TestCase):
 
     def test_move_event(self):
         event = {'CardId': 100010003, 'FromLaneId': 100001007,
-                 'DateTime': datetime.datetime(2017, 2, 27, 13, 58, 4),
+                 'DateTime': datetime.datetime(2017, 3, 2, 13, 0),
                  'ToLaneId': 100001009, 'Type': 'CardMoveEventDTO',
                  'UserId': 100000001, 'BoardId': 100000000}
         data = Event(self.board.cards[100010003].history[-1]).to_native()
@@ -90,7 +90,7 @@ class SchemaTest(unittest.TestCase):
 
     def test_tag_event(self):
         event = {'CardId': 100010001, 'ToLaneId': 100001004,
-                 'DateTime': datetime.datetime(2017, 3, 30, 11, 21, 1),
+                 'DateTime': datetime.datetime(2017, 3, 10, 11, 21, 1),
                  'Type': 'CardFieldsChangedEventDTO', 'UserId': 100000001,
                  'Changes': [{'FieldName': 'Tags', 'NewValue': 'Tag1,Tag2',
                               'OldValue': 'Tag1'}], 'BoardId': 100000000}
@@ -99,7 +99,7 @@ class SchemaTest(unittest.TestCase):
 
     def test_comment_event(self):
         event = {'CardId': 100010001, 'CommentText': '<p>Comment 1</p>',
-                 'DateTime': datetime.datetime(2017, 2, 27, 13, 58, 15),
+                 'DateTime': datetime.datetime(2017, 2, 28, 13, 58, 15),
                  'Type': 'CommentPostEventDTO', 'UserId': 100000001,
                  'BoardId': 100000000}
         data = Event(self.board.cards[100010001].history[-3]).to_native()

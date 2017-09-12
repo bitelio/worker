@@ -1,9 +1,10 @@
 import time
-import raven
 import signal
 import logging
 import leankit
 import traceback
+import collections
+import officehours
 
 from . import config
 from . import database
@@ -17,7 +18,6 @@ __version__ = "0.1.0"
 
 
 log = logging.getLogger(__name__)
-sentry = raven.Client()
 
 
 class Worker:
@@ -50,9 +50,8 @@ class Worker:
                 self.sync()
                 factor = 1
             except Exception as error:
-                sentry.captureException()
                 log.error(error)
-                self.alert.send(error, traceback.print_exc())
+                self.alert.send(error, traceback)
                 factor += 1
             self.sleep(self.throttle * factor + last_update - time.time())
         logging.shutdown()
@@ -68,14 +67,29 @@ class Worker:
         boards = database.load.many('settings', {'Update': True})
         for board in boards:
             if board['Reindex']:
-                self.reindex(board)
+                # TODO: reset Reindex to false
+                # self.reindex(board)
+                pass
             version = self.version.get(board['Id'])
-            version = handler.run(board['Id'], version)
+            version = handler.run(board, version)
             self.version[board['Id']] = version
 
     def reindex(self, board):
         """ Recompute event time intervals """
-        events = database.load.many('events', {'BoardId': board['Id']})
+        timer = officehours.Calculator(*board['OfficeHours'], board['Holidays'])
+        events = database.load.many('events', query={'BoardId': board['Id']},
+                                    timezone=board['Timezone'], sort='DateTime')
+        cards = collections.defaultdict(list)
+        for event in events:
+            cards[event['CardId']].append(event)
+        for card in cards:
+            i = 0
+            previous = events[i-1]['DateTime']
+            current = events[i]['DateTime']
+            event['TimeDelta'] = current - previous
+            event['TRT'] = timer.working_hours(previous, current)
+        flat = [event for card in cards for cards[card] in events]
+        database.update.events('events', flat)
 
     @staticmethod
     def refresh():

@@ -1,4 +1,5 @@
 from schematics.models import Model
+from schematics.types import IntType
 from schematics.types import ListType
 from schematics.types import ModelType
 from schematics.types import StringType
@@ -26,7 +27,9 @@ class Event(KanbanModel):
     DateTime = DateTimeType()
     FromLaneId = KanbanIdType(required=False)
     IsUnassigning = BooleanType(required=False)
+    TimeDelta = IntType(required=False)
     ToLaneId = KanbanIdType(required=False)
+    TRT = IntType(required=False)
     Type = StringType()
     UserId = KanbanIdType()
     WipOverrideComment = StringType(required=False)

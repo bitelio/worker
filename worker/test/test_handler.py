@@ -1,3 +1,4 @@
+import datetime
 import leankitmocks
 
 from worker import handler
@@ -8,7 +9,9 @@ class PopulateTest(BaseTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        handler.run(100000000, None)
+        cls.proto = {'Id': 100000000, 'OfficeHours': ['8:00', '16:00'],
+                     'Holidays': [datetime.datetime(2017, 3, 1)]}
+        handler.run(cls.proto, None)
         cls.board = leankitmocks.Board(100000000)
         cls.board.get_archive()
 
@@ -38,6 +41,18 @@ class PopulateTest(BaseTest):
         actual = self.db.events.find().count()
         self.assertEqual(expected, actual)
 
+    def test_event_trt(self, times=None):
+        cards = times or {
+            100010001: [19800, 19800, None, None, None, None, None],
+            100010002: [None],
+            100010003: [0, 0, 18000, 28800, 28800, None]
+        }
+        for card_id in cards:
+            cursor = self.db.events.find({'CardId': card_id}).sort('DateTime')
+            events = list(cursor.sort('DateTime'))
+            for i in range(len(events)):
+                self.assertEqual(cards[card_id][i], events[i].get('TRT'))
+
     def test_board(self):
         self.assertEqual(self.board.id, self.db.boards.find_one()['Id'])
 
@@ -48,9 +63,18 @@ class UpdateTest(PopulateTest):
         super().setUpClass()
         cls.board = leankitmocks.get_newer_if_exists(100000000, 1)
         cls.board.get_archive()
-        handler.run(100000000, 1)
+        handler.run(cls.proto, 1)
 
     def test_board(self):
         expected = self.board.version
         actual = self.db.boards.find_one()['Version']
         self.assertEqual(expected, actual)
+
+    def test_event_trt(self):
+        times = {
+            100010001: [19800, 19800, None, 305100, None, None, None, None],
+            100010002: [140400, None],
+            100010003: [0, 0, 18000, 28800, 28800, None],
+            100010004: [None]
+        }
+        super().test_event_trt(times)
