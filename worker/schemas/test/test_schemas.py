@@ -10,6 +10,7 @@ from ..card import Card
 from ..user import User
 from ..card_type import CardType
 from ..class_of_service import ClassOfService
+from ..setting import Setting
 from ..event import Event
 
 
@@ -79,6 +80,13 @@ class SchemaTest(unittest.TestCase):
                 'ParentLaneId': None, 'Title': 'Backlog'}
         data = Lane(self.board.lanes[100001001]).to_native()
         self.assertEqual(lane, data)
+
+    def test_setting(self):
+        setting = {'Holidays': [], 'Id': 100000000, 'Timezone': 'UTC',
+                   'Update': False, 'OfficeHours': ['8:00', '16:00'],
+                   'Ignore': {'TypeId': [], 'ClassOfServiceId': []}}
+        data = Setting(self.board).to_native()
+        self.assertEqual(setting, data)
 
     def test_move_event(self):
         event = {'CardId': 100010003, 'FromLaneId': 100001007,
