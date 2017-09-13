@@ -1,15 +1,13 @@
-import logging
-import pymongo
+from logging import getLogger
+from pymongo import MongoClient
 
 from .. import config
 
 
-log = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 
 log.info(f'Connecting to {config.MONGODB}')
-client = pymongo.MongoClient(config.MONGODB)
-try:
-    db = client.get_default_database()
-except pymongo.errors.ConfigurationError:
-    db = client[config.DATABASE]
+client = MongoClient(config.MONGODB, connectTimeoutMS=30000,
+                     socketTimeoutMS=None, socketKeepAlive=True)
+db = client.get_default_database()
