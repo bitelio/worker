@@ -1,13 +1,15 @@
-from logging import getLogger
+import logging
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers import mail
+from raven.handlers.logging import SentryHandler
+from raven.conf import setup_logging
 
 from . import config
 
 
 class SendGrid:
     def __init__(self):
-        self.log = getLogger(self.__class__.__qualname__)
+        self.log = logging.getLogger(self.__class__.__qualname__)
         self.sg = SendGridAPIClient(apikey=config.SENDGRID['APIKEY'])
         self.sender = config.SENDGRID['SENDER']
         self.receiver = config.SENDGRID['RECEIVER']
@@ -20,8 +22,6 @@ class SendGrid:
             content = mail.Content("text/plain", traceback.format_exc())
             email = mail.Mail(sender, subject, to, content)
             response = self.post(email.get())
-            print(self.receiver)
-            print(self.sender)
             if response.status_code == 200:
                 self.log.info(f'Sent email alert to {self.receiver}')
             else:
@@ -30,3 +30,7 @@ class SendGrid:
     def post(self, body):
         return self.sg.client.mail.send.post(request_body=body)
 
+
+sentry_handler = SentryHandler(config.SENTRY)
+sentry_handler.setLevel(logging.ERROR)
+setup_logging(sentry_handler)
