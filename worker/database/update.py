@@ -17,6 +17,7 @@ def one(item):
     log.info(f'{name} updated: {item} ({item.id})')
 
 
-def card(card, events=None):
+def card(card):
     one(card)
-    save.many(events or card.history)
+    delete.many('events', {'CardId': card.id})
+    save.many(card.history)

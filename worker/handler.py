@@ -102,10 +102,9 @@ class Updater:
                     log.warning(f'Card {card_id} found as duplicate')
                     database.update.card(card)
             else:
-                last_activity = cards[card_id]['LastActivity']
-                if card['LastActivity'] != last_activity:
-                    events = self.intervals(card.history, last_activity)
-                    database.update.card(card, events)
+                if card['LastActivity'] != cards[card_id]['LastActivity']:
+                    card.history = self.intervals(card.history)
+                    database.update.card(card)
 
         for card_id in cards:
             if card_id not in self.board.cards:
@@ -118,17 +117,17 @@ class Updater:
                         del card['ActualFinishDate']
                         # ------------------------------------
                         last_activity = cards[card_id]['LastActivity']
-                        events = self.intervals(card.history, last_activity)
-                        database.update.card(card, events)
+                        card.history = self.intervals(card.history)
+                        database.update.card(card)
                 except ConnectionError:
                     database.delete.card(card_id)
 
-    def intervals(self, history, last_activity=None):
+    def intervals(self, history):
         """ Calculate the TRT for each move card event. Last one has no TRT """
         previous = history[0]
         if previous['Type'] != 'CardCreationEventDTO':
             log.error(f"Card {card.id} didn't start with a creation event")
-        events = [] if last_activity else [previous]
+        events = [previous]
         for event in history[1:]:
             if event['Type'] == 'CardMoveEventDTO':
                 time_delta = event['DateTime'] - previous['DateTime']
@@ -136,8 +135,7 @@ class Updater:
                 previous['TimeDelta'] = time_delta.total_seconds()
                 previous['TRT'] = self.timer.working_seconds(*interval)
                 previous = event
-            if not last_activity or event['DateTime'] > last_activity:
-                events.append(event)
+            events.append(event)
         return events
 
 
