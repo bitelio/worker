@@ -12,9 +12,10 @@ log = logging.getLogger(__name__)
 
 
 class Updater:
-    def __init__(self, board, version):
+    def __init__(self, board, version, archive=False):
         self.board_id = board['Id']
         self.version = version
+        self.archive = archive
         self.timer = Calculator(*board['OfficeHours'], board['Holidays'])
 
     def run(self):
@@ -51,6 +52,8 @@ class Updater:
         self.board = leankit.get_newer_if_exists(*arguments)
         if self.board:
             log.debug(f'Updating board {self.board_id} to v{self.version}')
+            if self.archive:
+                self.board.get_archive()
             board = database.load.one('boards', self.board_id)
             if not self.equal(board, self.board):
                 database.update.one(self.board)
@@ -99,9 +102,10 @@ class Updater:
                     log.warning(f'Card {card_id} found as duplicate')
                     database.update.card(card)
             else:
-                if card['LastActivity'] != cards[card_id]['LastActivity']:
-                    card.history = self.intervals(card.history)
-                    database.update.card(card)
+                last_activity = cards[card_id]['LastActivity']
+                if card['LastActivity'] != last_activity:
+                    events = self.intervals(card.history, last_activity)
+                    database.update.card(card, events)
 
         for card_id in cards:
             if card_id not in self.board.cards:
@@ -113,17 +117,18 @@ class Updater:
                         del card['ActualStartDate']
                         del card['ActualFinishDate']
                         # ------------------------------------
-                        card.history = self.intervals(card.history)
-                        database.update.card(card)
+                        last_activity = cards[card_id]['LastActivity']
+                        events = self.intervals(card.history, last_activity)
+                        database.update.card(card, events)
                 except ConnectionError:
                     database.delete.card(card_id)
 
-    def intervals(self, history):
+    def intervals(self, history, last_activity=None):
         """ Calculate the TRT for each move card event. Last one has no TRT """
         previous = history[0]
         if previous['Type'] != 'CardCreationEventDTO':
             log.error(f"Card {card.id} didn't start with a creation event")
-        events = [previous]
+        events = [] if last_activity else [previous]
         for event in history[1:]:
             if event['Type'] == 'CardMoveEventDTO':
                 time_delta = event['DateTime'] - previous['DateTime']
@@ -131,11 +136,12 @@ class Updater:
                 previous['TimeDelta'] = time_delta.total_seconds()
                 previous['TRT'] = self.timer.working_seconds(*interval)
                 previous = event
-            events.append(event)
+            if not last_activity or event['DateTime'] > last_activity:
+                events.append(event)
         return events
 
 
-def run(board, version):
-    updater = Updater(board, version)
+def run(board, version, archive=False):
+    updater = Updater(board, version, archive)
     updater.run()
     return updater.version

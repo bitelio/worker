@@ -44,10 +44,12 @@ class Worker:
     def run(self):  # pragma: nocover
         log.info("Starting worker")
         self.refresh()
+        archive = True
         while not self.kill:
             try:
                 last_update = time.time()
-                self.sync()
+                self.sync(archive)
+                archive = False
                 factor = 1
             except Exception as error:
                 log.error(error)
@@ -63,15 +65,15 @@ class Worker:
             if self.kill:
                 break
 
-    def sync(self):
+    def sync(self, archive=False):
         boards = database.load.many('settings', {'Update': True})
         for board in boards:
-            if board['Reindex']:
+            # if board['Reindex']:
                 # TODO: reset Reindex to false
                 # self.reindex(board)
-                pass
+                # pass
             version = self.version.get(board['Id'])
-            version = handler.run(board, version)
+            version = handler.run(board, version, archive)
             self.version[board['Id']] = version
 
     def reindex(self, board):

@@ -9,7 +9,7 @@ def load(filename):
 
 
 LOGGING = getenv('LOGGING', 'INFO')
-MONGODB = getenv('MONGODB_URI', 'localhost/kanban')
+MONGODB = getenv('MONGODB_URI', 'mongodb://localhost/kanban')
 THROTTLE = getenv('THROTTLE', 60)
 TIMEZONE = getenv('TIMEZONE', 'Europe/Berlin')
 SENTRY = getenv('SENTRY_DSN', '')
