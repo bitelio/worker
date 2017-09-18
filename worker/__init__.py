@@ -3,8 +3,6 @@ import signal
 import logging
 import leankit
 import traceback
-import collections
-import officehours
 
 from . import config
 from . import database
@@ -53,7 +51,9 @@ class Worker:
                 factor = 1
             except Exception as error:
                 log.error(error)
-                self.alert.send(error, traceback)
+                error_stack = traceback.format_exc()
+                print(error_stack)
+                self.alert.send(error, error_stack)
                 factor += 1
             self.sleep(self.throttle * factor + last_update - time.time())
         logging.shutdown()
@@ -75,23 +75,6 @@ class Worker:
             version = self.version.get(board['Id'])
             version = handler.run(board, version, archive)
             self.version[board['Id']] = version
-
-    def reindex(self, board):
-        """ Recompute event time intervals """
-        timer = officehours.Calculator(*board['OfficeHours'], board['Holidays'])
-        events = database.load.many('events', query={'BoardId': board['Id']},
-                                    timezone=board['Timezone'], sort='DateTime')
-        cards = collections.defaultdict(list)
-        for event in events:
-            cards[event['CardId']].append(event)
-        for card in cards:
-            i = 0
-            previous = events[i-1]['DateTime']
-            current = events[i]['DateTime']
-            event['TimeDelta'] = current - previous
-            event['TRT'] = timer.working_hours(previous, current)
-        flat = [event for card in cards for cards[card] in events]
-        database.update.events('events', flat)
 
     @staticmethod
     def refresh():

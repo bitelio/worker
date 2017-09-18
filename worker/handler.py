@@ -1,5 +1,6 @@
 import logging
 import leankit
+from datetime import timedelta
 from officehours import Calculator
 from pymongo.errors import DuplicateKeyError
 
@@ -94,7 +95,7 @@ class Updater:
         options = {'query': query, 'timezone': config.TIMEZONE}
         cards = database.load.table('cards', **options)
         for card_id, card in self.board.cards.items():
-            if card_id not in cards:
+            if not self.archive and card_id not in cards:
                 card.history = self.intervals(card.history)
                 try:
                     database.save.card(card)
@@ -116,7 +117,6 @@ class Updater:
                         del card['ActualStartDate']
                         del card['ActualFinishDate']
                         # ------------------------------------
-                        last_activity = cards[card_id]['LastActivity']
                         card.history = self.intervals(card.history)
                         database.update.card(card)
                 except ConnectionError:
@@ -124,9 +124,8 @@ class Updater:
 
     def intervals(self, history):
         """ Calculate the TRT for each move card event. Last one has no TRT """
+        history = self.fix_history(history)
         previous = history[0]
-        if previous['Type'] != 'CardCreationEventDTO':
-            log.error(f"Card {card.id} didn't start with a creation event")
         events = [previous]
         for event in history[1:]:
             if event['Type'] == 'CardMoveEventDTO':
@@ -137,6 +136,24 @@ class Updater:
                 previous = event
             events.append(event)
         return events
+
+    @staticmethod
+    def fix_history(history):
+        """ For some cards, the creation event is not the first event """
+        if history[0]['Type'] == 'CardCreationEventDTO':
+            return history
+        else:
+            one_second = timedelta(seconds=1)
+            for i, event in enumerate(history[1:]):
+                if event['Type'] == 'CardCreationEventDTO':
+                    creation = history.pop(i+1)
+                    creation['DateTime'] = history[0]['DateTime'] - one_second
+                    history.insert(0, creation)
+                    break
+            else:
+                card_id = history[0]['CardId']
+                log.warning(f'Card {card_id} has no creation date')
+            return history
 
 
 def run(board, version, archive=False):

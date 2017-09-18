@@ -19,7 +19,7 @@ class SendGrid:
             sender = mail.Email(self.sender)
             to = mail.Email(self.receiver)
             subject = f'Worker: {error}'
-            content = mail.Content("text/plain", traceback.format_exc())
+            content = mail.Content("text/plain", traceback)
             email = mail.Mail(sender, subject, to, content)
             response = self.post(email.get())
             if response.status_code == 200:

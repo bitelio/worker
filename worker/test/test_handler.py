@@ -1,5 +1,6 @@
 import datetime
 import leankitmocks
+import unittest
 
 from worker import handler
 from worker.test.base import BaseTest
@@ -50,8 +51,8 @@ class PopulateTest(BaseTest):
         for card_id in cards:
             cursor = self.db.events.find({'CardId': card_id}).sort('DateTime')
             events = list(cursor.sort('DateTime'))
-            for i in range(len(events)):
-                self.assertEqual(cards[card_id][i], events[i].get('TRT'))
+            for i, event in enumerate(events):
+                self.assertEqual(cards[card_id][i], event.get('TRT'))
 
     def test_board(self):
         self.assertEqual(self.board.id, self.db.boards.find_one()['Id'])
@@ -70,11 +71,25 @@ class UpdateTest(PopulateTest):
         actual = self.db.boards.find_one()['Version']
         self.assertEqual(expected, actual)
 
-    def test_event_trt(self):
-        times = {
+    def test_event_trt(self, times=None):
+        trt = {
             100010001: [19800, 19800, None, 305100, None, None, None, None],
             100010002: [140400, None],
             100010003: [0, 0, 18000, 28800, 28800, None],
             100010004: [None]
         }
-        super().test_event_trt(times)
+        super().test_event_trt(trt or times)
+
+
+class StaticTest(unittest.TestCase):
+    def test_fix_history(self):
+        history = [
+            {'CardId': 123456789, 'Type': 'CardMoveEventDTO',
+             'DateTime': datetime.datetime(2017, 1, 1, 12)},
+            {'CardId': 123456789, 'Type': 'CardCreationEventDTO',
+             'DateTime': datetime.datetime(2017, 1, 1, 12, 1)},
+        ]
+        actual = handler.Updater.fix_history([event for event in history])
+        history[1]['DateTime'] = datetime.datetime(2017, 1, 1, 11, 59, 59)
+        expected = history[::-1]
+        self.assertEqual(expected, actual)
