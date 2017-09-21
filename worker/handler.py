@@ -125,14 +125,15 @@ class Updater:
     def intervals(self, history):
         """ Calculate the TRT for each move card event. Last one has no TRT """
         history = self.fix_history(history)
-        previous = history[0]
-        events = [previous]
-        for event in history[1:]:
-            if event['Type'] == 'CardMoveEventDTO':
-                time_delta = event['DateTime'] - previous['DateTime']
-                interval = (previous['DateTime'], event['DateTime'])
-                previous['TimeDelta'] = time_delta.total_seconds()
-                previous['TRT'] = self.timer.working_seconds(*interval)
+        previous = None
+        events = []
+        for event in history:
+            if event['Type'] in ['CardMoveEventDTO', 'CardCreationEventDTO']:
+                if previous:
+                    time_delta = event['DateTime'] - previous['DateTime']
+                    interval = (previous['DateTime'], event['DateTime'])
+                    previous['TimeDelta'] = time_delta.total_seconds()
+                    previous['TRT'] = self.timer.working_seconds(*interval)
                 previous = event
             events.append(event)
         return events
@@ -144,10 +145,14 @@ class Updater:
             return history
         else:
             one_second = timedelta(seconds=1)
+            date_format = '%d/%m/%Y at %I:%M:%S %p'
             for i, event in enumerate(history[1:]):
                 if event['Type'] == 'CardCreationEventDTO':
                     creation = history.pop(i+1)
-                    creation['DateTime'] = history[0]['DateTime'] - one_second
+                    mismatch = creation['DateTime'] - history[0]['DateTime']
+                    log.warning(f'Date mismatch: {mismatch.total_seconds()}s')
+                    date_time = history[0]['DateTime'] - one_second
+                    creation['DateTime'] = date_time.strftime(date_format)
                     history.insert(0, creation)
                     break
             else:

@@ -82,6 +82,11 @@ class UpdateTest(PopulateTest):
 
 
 class StaticTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        board = {'Id': 0, 'OfficeHours': ['8:00', '16:00'], 'Holidays': []}
+        cls.updater = handler.Updater(board, 0)
+
     def test_fix_history(self):
         history = [
             {'CardId': 123456789, 'Type': 'CardMoveEventDTO',
@@ -89,7 +94,28 @@ class StaticTest(unittest.TestCase):
             {'CardId': 123456789, 'Type': 'CardCreationEventDTO',
              'DateTime': datetime.datetime(2017, 1, 1, 12, 1)},
         ]
-        actual = handler.Updater.fix_history([event for event in history])
-        history[1]['DateTime'] = datetime.datetime(2017, 1, 1, 11, 59, 59)
+        actual = self.updater.fix_history([event for event in history])
+        history[1]['DateTime'] = '01/01/2017 at 11:59:59 AM'
         expected = history[::-1]
         self.assertEqual(expected, actual)
+
+    def test_intervals(self):
+        history = [{'DateTime': datetime.datetime(2017, 1, 2),
+                    'Type': 'CardCreationEventDTO', 'CardId': 1},
+                   {'DateTime': datetime.datetime(2017, 1, 3),
+                    'Type': 'OtherEvent', 'CardId': 1},
+                   {'DateTime': datetime.datetime(2017, 1, 4),
+                    'Type': 'CardMoveEventDTO', 'CardId': 1}]
+        result = self.updater.intervals(history)
+        self.assertEqual(57600, result[0]['TRT'])
+        self.assertNotIn('TRT', result[2])
+
+    def test_intervals_with_no_creation(self):
+        history = [{'DateTime': datetime.datetime(2017, 1, 2),
+                    'Type': 'OtherEvent', 'CardId': 1},
+                   {'DateTime': datetime.datetime(2017, 1, 3),
+                    'Type': 'OtherEvent', 'CardId': 1},
+                   {'DateTime': datetime.datetime(2017, 1, 4),
+                    'Type': 'CardMoveEventDTO', 'CardId': 1}]
+        result = self.updater.intervals(history)
+        self.assertNotIn('TRT', result[0])
