@@ -91,11 +91,13 @@ class Updater:
                     database.delete.one(collection, item_id)
 
     def update_cards(self):
-        query = {'BoardId': self.board_id, 'DateArchived': None}
+        query = {'BoardId': self.board_id}
+        if not self.archive:
+            query['DateArchived'] = None
         options = {'query': query, 'timezone': config.TIMEZONE}
         cards = database.load.table('cards', **options)
         for card_id, card in self.board.cards.items():
-            if not self.archive and card_id not in cards:
+            if card_id not in cards:
                 card.history = self.intervals(card.history)
                 try:
                     database.save.card(card)

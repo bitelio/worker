@@ -43,6 +43,7 @@ class Worker:
         log.info("Starting worker")
         self.refresh()
         archive = True
+        factor = 1
         while not self.kill:
             try:
                 last_update = time.time()
@@ -54,7 +55,7 @@ class Worker:
                 error_stack = traceback.format_exc()
                 print(error_stack)
                 self.alert.send(error, error_stack)
-                factor += 1
+                factor *= 2
             self.sleep(self.throttle * factor + last_update - time.time())
         logging.shutdown()
 
