@@ -4,9 +4,7 @@ from datetime import timedelta
 from officehours import Calculator
 from pymongo.errors import DuplicateKeyError
 
-from . import config
-from . import mappings
-from . import database
+from . import config, mappings, database
 
 
 log = logging.getLogger(__name__)
@@ -21,11 +19,19 @@ class Updater:
 
     def run(self):
         # TODO: lock file
+        self.stage()
         if self.version:
             self.update()
         else:
             self.populate()
         # release lock file
+
+    def stage(self):
+        """ Add stage field to lanes """
+        for lane in self.board.archive_lanes:
+            lane['Stage'] = 'archive'
+        for lane in self.board.backlog_lanes:
+            lane['Stage'] = 'backlog'
 
     @staticmethod
     def convert(item):

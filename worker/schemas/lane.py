@@ -14,6 +14,7 @@ class Lane(KanbanModel):
     LaneState = StringType()
     Orientation = IntType()
     ParentLaneId = KanbanIdType(required=False)
+    Stage = StringType(required=False, default='wip')
     SiblingLaneIds = ListType(KanbanIdType)
     Title = StringType()
     Width = IntType()

@@ -1,18 +1,15 @@
+__author__ = "Guillermo Guirao Aguilar"
+__email__ = "info@bitelio.com"
+__version__ = "0.1.0"
+
+
 import time
 import signal
 import logging
 import leankit
 import traceback
 
-from . import config
-from . import database
-from . import handler
-from . import alerts
-
-
-__author__ = "Guillermo Guirao Aguilar"
-__email__ = "info@bitelio.com"
-__version__ = "0.1.0"
+from . import config, database, handler, alerts
 
 
 log = logging.getLogger(__name__)
