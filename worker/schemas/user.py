@@ -1,9 +1,7 @@
-from schematics.types import IntType
-from schematics.types import StringType
-from schematics.types import BooleanType
+from schematics.types import IntType, StringType, BooleanType
 
 from .models import KanbanModel
-from .types import KanbanIdType
+from .types import KanbanIdType, LowerCaseType
 
 
 class User(KanbanModel):
@@ -13,4 +11,4 @@ class User(KanbanModel):
     GravatarLink = StringType()
     Id = KanbanIdType()
     Role = IntType(choices=[1, 2, 3, 4])
-    UserName = StringType()
+    UserName = LowerCaseType()

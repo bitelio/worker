@@ -1,6 +1,5 @@
 from datetime import datetime, date
-from schematics.types import IntType
-from schematics.types import DateType
+from schematics.types import IntType, DateType, StringType
 from schematics.exceptions import ValidationError
 
 
@@ -16,6 +15,12 @@ class KanbanIdType(IntType):  # pragma: no cover
             return value
         else:
             raise ValidationError(self.messages['id_length'])
+
+
+class LowerCaseType(StringType):
+    def to_native(self, value, context=None):
+        native = super().to_native(value, context)
+        return native.lower() if isinstance(native, str) else native
 
 
 class MongoDateType(DateType):  # pragma: no cover
