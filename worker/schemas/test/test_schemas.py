@@ -56,6 +56,7 @@ class SchemaTest(unittest.TestCase):
                 'GravatarLink': '36020adab302af77eb6273e0b2ead7cf',
                 'Id': 100000001, 'Role': 4, 'UserName': 'User1@example.org'}
         data = User(self.board.users[100000001]).to_native()
+        user['UserName'] = user['UserName'].lower()
         self.assertEqual(user, data)
 
     def test_class_of_service(self):
@@ -77,7 +78,7 @@ class SchemaTest(unittest.TestCase):
         lane = {'BoardId': 100000000, 'ChildLaneIds': [], 'Id': 100001001,
                 'Index': 0, 'LaneState': 'lane', 'Orientation': 0, 'Width': 1,
                 'SiblingLaneIds': [100001002, 100001008, 100001003],
-                'ParentLaneId': None, 'Title': 'Backlog'}
+                'ParentLaneId': None, 'Title': 'Backlog', 'Stage': 'wip'}
         data = Lane(self.board.lanes[100001001]).to_native()
         self.assertEqual(lane, data)
 

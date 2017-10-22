@@ -19,7 +19,6 @@ class Updater:
 
     def run(self):
         # TODO: lock file
-        self.stage()
         if self.version:
             self.update()
         else:
@@ -59,6 +58,7 @@ class Updater:
         self.board = leankit.get_newer_if_exists(*arguments)
         if self.board:
             log.debug(f'Updating board {self.board_id} to v{self.version}')
+            self.stage()
             if self.archive:
                 self.board.get_archive()
             board = database.load.one('boards', self.board_id)
@@ -72,6 +72,7 @@ class Updater:
         log.info(f'Populating board {self.board_id}')
         self.board = leankit.Board(self.board_id, config.TIMEZONE)
         self.board.get_archive()
+        self.stage()
         database.save.one(self.board)
         types = ['lanes', 'cards', 'users', 'card_types', 'classes_of_service']
         for collection in types:
