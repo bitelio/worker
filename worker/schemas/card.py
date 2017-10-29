@@ -28,3 +28,4 @@ class Card(KanbanModel):
     Tags = ListType(StringType)
     Title = StringType()
     TypeId = KanbanIdType()
+    Version = IntType(required=True)

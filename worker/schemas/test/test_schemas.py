@@ -26,7 +26,7 @@ class SchemaTest(unittest.TestCase):
                 'DateArchived': datetime.date(2017, 3, 2), 'Id': 100010003,
                 'Description': '', 'DueDate': None, 'ExternalCardID': '',
                 'LastActivity': datetime.datetime(2017, 3, 2, 13),
-                'LastMove': datetime.datetime(2017, 3, 2, 13),
+                'LastMove': datetime.datetime(2017, 3, 2, 13), 'Version': 7,
                 'Size': 0, 'Tags': [], 'Title': 'Task 1', 'BoardId': 100000000}
         card['DateArchived'] = datetime.datetime(2017, 3, 2)
         data = Card(self.board.cards[100010003]).to_native()
