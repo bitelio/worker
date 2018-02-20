@@ -14,8 +14,4 @@ setup(name='worker',
       author='Guillermo Guirao Aguilar',
       author_email='info@bitelio.com',
       url='https://github.com/bitelio/worker',
-      install_requires=['raven', 'leankit', 'schematics', 'officehours',
-                        'pymongo', 'PyYAML', 'sendgrid'],
-      setup_requires=['nose', 'rednose', 'coverage',
-                      'leankitmocks', 'mongomock'],
       entry_points={'console_scripts': ['worker = worker:run']})

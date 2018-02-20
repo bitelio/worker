@@ -9,12 +9,18 @@ from .types import KanbanIdType
 class Lane(KanbanModel):
     BoardId = KanbanIdType()
     ChildLaneIds = ListType(KanbanIdType)
+    Height = IntType(min_value=0)
     Id = KanbanIdType()
     Index = IntType()
-    LaneState = StringType()
+    Left = IntType(min_value=0)
     Orientation = IntType()
     ParentLaneId = KanbanIdType(required=False)
-    Stage = StringType(required=False, default='wip')
     SiblingLaneIds = ListType(KanbanIdType)
     Title = StringType()
-    Width = IntType()
+    Top = IntType(min_value=0)
+    Width = IntType(min_value=0)
+
+    def __init__(self, raw_data, *args, **kwargs):
+        for attr in ["top", "height", "left", "width"]:
+            raw_data[attr.capitalize()] = getattr(raw_data, attr)
+        super().__init__(raw_data, *args, **kwargs)

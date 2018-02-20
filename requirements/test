@@ -1,0 +1,6 @@
+-r main
+pytest
+coverage
+mongomock
+fakeredis
+leankitmocks

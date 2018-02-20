@@ -8,11 +8,16 @@ from .types import KanbanIdType
 
 
 class Board(Model):
-    ArchiveTopLevelLaneId = IntType()
-    AvailableTags = ListType(StringType)
-    BacklogTopLevelLaneId = IntType()
+    ArchiveTopLevelLaneId = IntType(required=False)
+    AvailableTags = ListType(StringType, required=False)
+    BacklogTopLevelLaneId = IntType(required=False)
     Id = KanbanIdType()
     Title = StringType()
-    TopLevelLaneIds = ListType(KanbanIdType)
-    Version = IntType()
-    Reindex = BooleanType(default=False)
+    TopLevelLaneIds = ListType(KanbanIdType, required=False)
+    Version = IntType(required=False)
+
+    def populate(self):
+        data = self.to_native()
+        data.update({"Holidays": [], "Timezone": "UTC",
+                     "OfficeHours": ["8:00", "16:00"]})
+        return data

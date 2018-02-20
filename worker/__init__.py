@@ -5,56 +5,44 @@ __version__ = "0.1.0"
 
 import time
 import signal
-import logging
 import leankit
-import traceback
+import importlib
+import schematics
 
-from . import config, database, handler, alerts
-
-
-log = logging.getLogger(__name__)
+from . import env
+from .utils import lock
+from .board import Updater
+from .schemas.board import Board
 
 
 class Worker:
-    # TODO: mongo lock -> avoid two workers running
-    # server microservice -> refresh, remove, etc.
-
-    def __init__(self, throttle=None):
+    def __init__(self, environment: str) -> None:
+        importlib.import_module(f"worker.env.{environment}")
         self.kill = False
-        self.alert = alerts.SendGrid()
-        self.version = {board['Id']: board['Version'] for board in
-                        database.load.many('boards')}
-        try:
-            self.throttle = int(throttle or config.THROTTLE)
-        except ValueError:
-            self.throttle = 60
-
+        self.boards: dict = {}
         signal.signal(signal.SIGINT, self.exit)
         signal.signal(signal.SIGTERM, self.exit)
+        with lock("worker", blocking_timeout=1):
+            env.log.info(f"Starting worker in {environment} mode")
+            self.run()
 
     def exit(self, signum, frame):
-        log.info("Stopping")
+        env.log.info("Stopping")
         self.kill = True
 
     def run(self):  # pragma: nocover
-        log.info("Starting worker")
         self.refresh()
-        archive = True
-        factor = 1
+        backoff = 1
         while not self.kill:
+            last_update = time.time()
             try:
-                last_update = time.time()
-                self.sync(archive)
-                archive = False
-                factor = 1
+                self.sync()
+                backoff = 1
             except Exception as error:
-                log.error(error)
-                error_stack = traceback.format_exc()
-                print(error_stack)
-                self.alert.send(error, error_stack)
-                factor *= 2
-            self.sleep(self.throttle * factor + last_update - time.time())
-        logging.shutdown()
+                env.log.error(error, exc_info=True)
+                backoff *= 2
+            self.sleep(env.throttle * backoff + last_update - time.time())
+            self.jobs()
 
     def sleep(self, seconds):
         while seconds > 0:
@@ -63,39 +51,52 @@ class Worker:
             if self.kill:
                 break
 
-    def sync(self, archive=False):
-        boards = database.load.many('settings', {'Update': True})
-        for board in boards:
-            # if board['Reindex']:
-                # TODO: reset Reindex to false
-                # self.reindex(board)
-                # pass
-            version = self.version.get(board['Id'])
-            version = handler.run(board, version, archive)
-            self.version[board['Id']] = version
+    def sync(self):
+        boards = env.cache.get("worker:boards")
+        if boards:
+            try:
+                board_ids = [int(board_id) for board_id in boards.split()]
+            except ValueError:
+                env.log.error("Invalid sync ids format")
+            else:
+                for board_id in board_ids:
+                    with lock(f'write:{board_id}'):
+                        if board_id in self.boards:
+                            self.boards[board_id].update()
+                        else:
+                            try:
+                                self.boards[board_id] = Updater(board_id)
+                            except schematics.DataError:
+                                env.log.warning(f"Removing board {board_id}")
+                                boards.remove(board_id)
+                                env.cache.set("worker:boards", boards)
+                                return
+                    env.cache.set(f"worker:{board_id}", int(time.time()))
+
+    def jobs(self):
+        job = env.cache.lpop("worker:jobs")
+        while job:
+            try:
+                action, board_id = job.split(":")
+                getattr(self.boards[board_id], action)()
+            except (ValueError, AttributeError, KeyError, TypeError) as error:
+                env.log.error(f"Invalid job: {job} - {error}")
+            finally:
+                job = env.cache.lpop("worker:jobs")
 
     @staticmethod
     def refresh():
-        # TODO: lock file
-        log.info('Checking for new boards')
-        boards = leankit.get_boards()
-        board_ids = database.load.field('settings', 'Id')
-        new_boards = [board for board in boards if board['Id'] not in board_ids]
+        env.log.info('Refreshing boards')
+        boards = {board["Id"]: board for board in leankit.get_boards()}
+        board_ids = [board["Id"] for board in env.db.boards.find()]
+        new_boards = [Board(board).populate() for board in boards.values()
+                      if board["Id"] not in board_ids]
         if new_boards:
-            database.save.settings(new_boards)
+            env.db.boards.insert_many(new_boards)
+            env.log.info(f"{len(new_boards)} new boards available")
 
-    @staticmethod
-    def reset():
-        raise NotImplementedError
-
-    @staticmethod
-    def remove(board_id):
-        raise NotImplementedError
-
-
-def run():  # pragma: nocover
-    from logging.config import dictConfig
-    dictConfig(config.logging)
-    database.init()
-    worker = Worker()
-    worker.run()
+        old_boards = [board_id for board_id in board_ids
+                      if board_id not in boards]
+        if old_boards:
+            env.db.boards.delete_many({"Id": {"$in": old_boards}})
+            env.log.info(f"{len(new_boards)} boards removed")
