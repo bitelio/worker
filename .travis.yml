@@ -1,6 +1,13 @@
+sudo: required
 language: python
-python:
-  - 3.6
-script:
-  - pip install -r requirements/test
-  # - python setup.py nosetests
+services:
+  - docker
+python: 3.6
+install: pip install -r requirements/test
+script: pytest
+after_success:
+  - if [[ "$TRAVIS_BRANCH" == "master" ]]; then
+      docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD;
+      docker build -t bitelio/worker .;
+      docker push bitelio/worker;
+    fi
