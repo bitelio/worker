@@ -8,5 +8,6 @@ formatter = Formatter("%(asctime)s │ %(levelname)9s │ %(board)9s │ %(messa
 handler = StreamHandler()
 handler.setFormatter(formatter)
 log.addHandler(handler)
-throttle: int = getenv("THROTTLE", 60)
+throttle: int = int(getenv("THROTTLE", 60))
+timezone: str = getenv("TIMEZONE", "Europe/Berlin")
 log._log = partial(log._log, extra={"board": ""})

@@ -1,8 +1,8 @@
 from os import getenv
 from redis import StrictRedis
 from pymongo import MongoClient
-from logging import RotatingFileHandler
 from pymongo.errors import DuplicateKeyError
+from logging.handlers import RotatingFileHandler
 # from sendgrid import SendGridAPIClient
 from raven.handlers.logging import SentryHandler
 from raven.conf import setup_logging
@@ -11,7 +11,7 @@ from worker import env
 
 
 env.cache = StrictRedis("redis")
-env.mongo = MongoClient("mongo", connectTimeoutMS=30000,
+env.mongo = MongoClient(getenv("MONGODB"), connectTimeoutMS=30000,
                         socketTimeoutMS=None, socketKeepAlive=True)
 env.db = env.mongo.bitelio
 # sg = SendGridAPIClient(apikey=config.SENDGRID['APIKEY'])
