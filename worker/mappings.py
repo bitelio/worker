@@ -3,12 +3,13 @@ from importlib import import_module
 
 
 class Item:
-    __slots__ = ["type", "name", "schema", "collection"]
+    __slots__ = ["type", "name", "schema", "variable", "collection"]
 
     def __init__(self, i):
         self.type = types[i]
         self.name = names[i]
         self.schema = schemas[i]
+        self.variable = variables[i]
         self.collection = collections[i]
 
 

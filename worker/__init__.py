@@ -7,6 +7,7 @@ import time
 import signal
 import leankit
 import importlib
+import structlog
 import schematics
 
 from . import env
@@ -20,14 +21,15 @@ class Worker:
         importlib.import_module(f"worker.env.{environment}")
         self.kill = False
         self.boards: dict = {}
+        self.log = structlog.get_logger("worker")
         signal.signal(signal.SIGINT, self.exit)
         signal.signal(signal.SIGTERM, self.exit)
         with lock("worker", blocking_timeout=1):
-            env.log.info(f"Starting worker in {environment} mode")
+            self.log.info("Starting worker", mode=environment)
             self.run()
 
     def exit(self, signum, frame):
-        env.log.info("Stopping")
+        self.log.info("Stopping worker")
         self.kill = True
 
     def run(self):  # pragma: nocover
@@ -39,7 +41,7 @@ class Worker:
                 self.sync()
                 backoff = 1
             except Exception as error:
-                env.log.error(error, exc_info=True)
+                self.log.error(error, exc_info=True)
                 backoff *= 2
             self.sleep(env.throttle * backoff + last_update - time.time())
             self.jobs()
@@ -57,17 +59,18 @@ class Worker:
             try:
                 board_ids = [int(board_id) for board_id in boards.split()]
             except ValueError:
-                env.log.error("Invalid sync ids format")
+                self.log.error("Invalid sync ids format")
             else:
                 for board_id in board_ids:
-                    with lock(f'write:{board_id}'):
+                    with lock(f"write:{board_id}"):
                         if board_id in self.boards:
                             self.boards[board_id].update()
                         else:
                             try:
                                 self.boards[board_id] = Updater(board_id)
                             except schematics.DataError:
-                                env.log.warning(f"Removing board {board_id}")
+                                self.log.warning("Board removed",
+                                                 board=board_id)
                                 boards.remove(board_id)
                                 env.cache.set("worker:boards", boards)
                                 return
@@ -80,23 +83,22 @@ class Worker:
                 action, board_id = job.split(":")
                 getattr(self.boards[board_id], action)()
             except (ValueError, AttributeError, KeyError, TypeError) as error:
-                env.log.error(f"Invalid job: {job} - {error}")
+                self.log.error("Invalid job", job=job, error=error)
             finally:
                 job = env.cache.lpop("worker:jobs")
 
-    @staticmethod
-    def refresh():
-        env.log.info('Refreshing boards')
+    def refresh(self):
+        self.log.info("Refreshing boards", action="refresh")
         boards = {board["Id"]: board for board in leankit.get_boards()}
         board_ids = [board["Id"] for board in env.db.boards.find()]
         new_boards = [Board(board).populate() for board in boards.values()
                       if board["Id"] not in board_ids]
         if new_boards:
             env.db.boards.insert_many(new_boards)
-            env.log.info(f"{len(new_boards)} new boards available")
+            self.log.info("New boards available", n=len(new_boards))
 
         old_boards = [board_id for board_id in board_ids
                       if board_id not in boards]
         if old_boards:
             env.db.boards.delete_many({"Id": {"$in": old_boards}})
-            env.log.info(f"{len(new_boards)} boards removed")
+            self.log.info("Boards deleted", n=len(old_boards))

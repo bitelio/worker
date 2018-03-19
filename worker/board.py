@@ -1,6 +1,6 @@
 import leankit
-from functools import partial
 from datetime import timedelta
+from structlog import get_logger
 from officehours import Calculator
 from schematics.models import Model
 from schematics.exceptions import DataError
@@ -14,21 +14,21 @@ from .schemas.board import Board
 
 class Updater:
     def __init__(self, board_id: int) -> None:
-        self.id = board_id
-        self.log = env.log.getChild(str(board_id))
-        self.log._log = partial(self.log._log, extra={"board": board_id})
+        self.log = get_logger(f"worker.{board_id}").bind(board=board_id)
+        self.version: int = 0
         self.hashes: dict = {}
-        self.version = 0
+        self.id: int = board_id
         self.reload()
         self.download()
 
     def download(self):
-        self.log.info("Downloading board")
+        self.log.info("Downloading board", action="download")
         board = leankit.Board(self.id, self.timezone)
         card_ids = list(board.cards.keys())
         board.get_archive()
         for card in board.cards.values():
-            self.log.debug(f"Downloading card {card.id} ({len(card.history)})")
+            self.log.debug("Downloading card", action="download", id=card.id,
+                           history=len(card.history), type="card")
         with lock(f"read:{board.id}"):
             self.reset()
             data = Board(board).to_native()
@@ -46,7 +46,8 @@ class Updater:
                           for event in self.history(card.history)]
                 env.db.events.insert_many(events)
             except DataError as error:
-                self.log.error(f"{item.name} data error: {error}")
+                self.log.error(f"{item.card} data error",
+                               type=item.variable, error=error)
                 self.reset()
                 raise error
             cards = {card: board.cards[card].version for card in card_ids}
@@ -54,35 +55,38 @@ class Updater:
 
     def update(self):
         arguments = self.id, self.version, self.timezone
-        self.log.debug(f"Checking board {self.id} for updates")
+        self.log.debug("Updating board", action="update")
         board = leankit.get_newer_if_exists(*arguments)
         if board:
             data = Board(board).to_native()
             env.db.boards.update_one({"Id": self.id}, {"$set": data})
             for item in items:
+                log = self.log.bind(type=item.variable)
                 units = getattr(board, item.collection)
                 hashes = self.hashes[item.collection]
                 for item_id, data in units.items():
+                    log = log.bind(id=item_id)
                     try:
                         model = item.schema(data)
                     except DataError as error:
-                        msg = f"{item.name} data error: {model.Id} - {error}"
-                        self.log.error(msg)
+                        log.error("{item.card} data error", error=error)
                         continue
 
                     if item_id not in hashes:
                         try:
                             self.insert(model, item.collection)
-                            self.log.info(f"{item.type} created: {item_id}")
+                            log.info(f"{item.name} created", action="create")
                         except env.DuplicateKeyError:
-                            self.log.error(f"Duplicate {item.name}: {item_id}")
+                            log.error("Duplicate {item.name} found",
+                                      error="duplicate")
                     elif model.hash != hashes[item_id]:
-                        self.log.info(f"{item.type} updated: {item_id}")
+                        log.info(f"{item.name} updated", action="update")
                         self.replace(model, item.collection)
 
                 cached_ids = list(hashes.keys())
                 for item_id in cached_ids:
                     if item_id not in units:
+                        log = log.bind(id=item_id)
                         if item.collection == "cards":
                             try:
                                 card = board.get_card(item_id)
@@ -90,11 +94,12 @@ class Updater:
                                 pass
                             else:
                                 if card.lane:
-                                    self.log.info(f"Card archived: {item_id}")
+                                    self.info(f"{item.name} archived",
+                                              action="archive")
                                     model = item.schema(card)
                                     self.replace(model, item.collection)
                                     continue
-                        self.log.info(f"{item.type} deleted: {item_id}")
+                        log.info(f"{item.name} deleted", action="delete")
                         self.delete(item_id, item.collection)
 
             self.version = board.version
@@ -106,7 +111,8 @@ class Updater:
                 try:
                     events = self.history(history)
                 except DataError as error:
-                    self.log.error(f"History data error: {model.Id} - {error}")
+                    self.log.error("History data error", error=error,
+                                   id=model.Id, type="card")
                     return
                 env.db.events.insert_many(events)
                 env.db.cards.insert_one(model.to_native())
@@ -122,7 +128,8 @@ class Updater:
                 try:
                     events = self.history(history)
                 except DataError as error:
-                    self.log.error(f"History data error: {model.Id} - {error}")
+                    self.log.error("History data error", error=error,
+                                   id=model.Id, type="card")
                     env.db.cards.delete_one({"Id": model.Id})
                     return
                 env.db.events.insert_many(events)
@@ -138,7 +145,7 @@ class Updater:
         del self.hashes[collection][item_id]
 
     def reset(self):
-        self.log.info("Resetting board")
+        self.log.info("Resetting board", action="reset")
         for collection in collections:
             env.db[collection].delete_many({"BoardId": self.id})
         env.db.events.delete_many({"BoardId": self.id})
@@ -153,18 +160,19 @@ class Updater:
             card_id = history[0]["CardId"]
             date_format = "%m/%d/%Y at %I:%M:%S %p"
             one_second = timedelta(seconds=1)
+            log = self.log.bind(id=card_id, type="card")
             for i, event in enumerate(history[1:]):
                 if event["Type"] == "CardCreationEventDTO":
                     creation = history.pop(i+1)
                     mismatch = creation["DateTime"] - history[0]["DateTime"]
                     seconds = int(mismatch.total_seconds())
-                    self.log.warning(f"Date mismatch: {seconds}s ({card_id})")
+                    log.warning("Date mismatch", seconds=seconds)
                     date_time = history[0]["DateTime"] - one_second
                     creation["DateTime"] = date_time.strftime(date_format)
                     history.insert(0, creation)
                     break
             else:
-                self.log.warning(f"Card {card_id} has no creation date")
+                log.warning("No creation date")
 
         previous = None
         for event in history:
