@@ -25,7 +25,7 @@ class Worker:
         signal.signal(signal.SIGINT, self.exit)
         signal.signal(signal.SIGTERM, self.exit)
         with lock("worker", blocking_timeout=1):
-            self.log.info("Starting worker", mode=environment)
+            self.log.info("Starting worker", info=environment)
             self.run()
 
     def exit(self, signum, frame):
@@ -83,7 +83,7 @@ class Worker:
                 action, board_id = job.split(":")
                 getattr(self.boards[board_id], action)()
             except (ValueError, AttributeError, KeyError, TypeError) as error:
-                self.log.error("Invalid job", job=job, error=error)
+                self.log.error("Invalid job", info=job, error=error)
             finally:
                 job = env.cache.lpop("worker:jobs")
 
@@ -95,10 +95,10 @@ class Worker:
                       if board["Id"] not in board_ids]
         if new_boards:
             env.db.boards.insert_many(new_boards)
-            self.log.info("New boards available", n=len(new_boards))
+            self.log.info("New boards available", info=len(new_boards))
 
         old_boards = [board_id for board_id in board_ids
                       if board_id not in boards]
         if old_boards:
             env.db.boards.delete_many({"Id": {"$in": old_boards}})
-            self.log.info("Boards deleted", n=len(old_boards))
+            self.log.info("Boards deleted", info=len(old_boards))

@@ -28,7 +28,7 @@ class Updater:
         board.get_archive()
         for card in board.cards.values():
             self.log.debug("Downloading card", action="download", id=card.id,
-                           history=len(card.history), type="card")
+                           info=len(card.history), type="card")
         with lock(f"read:{board.id}"):
             self.reset()
             data = Board(board).to_native()
@@ -166,7 +166,7 @@ class Updater:
                     creation = history.pop(i+1)
                     mismatch = creation["DateTime"] - history[0]["DateTime"]
                     seconds = int(mismatch.total_seconds())
-                    log.warning("Date mismatch", seconds=seconds)
+                    log.warning("Date mismatch", info=seconds)
                     date_time = history[0]["DateTime"] - one_second
                     creation["DateTime"] = date_time.strftime(date_format)
                     history.insert(0, creation)

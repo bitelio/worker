@@ -1,5 +1,6 @@
 from os import getenv
 from sys import stdout
+from pathlib import Path
 from redis import StrictRedis
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
@@ -17,9 +18,11 @@ env.cache = StrictRedis("redis")
 env.mongo = MongoClient(getenv("MONGODB"), connectTimeoutMS=30000,
                         socketTimeoutMS=None, socketKeepAlive=True)
 env.db = env.mongo.bitelio
-rotating_handler = RotatingFileHandler("/var/log/worker.log", "a", 5**10, 2)
+logs = "/var/log/worker"
+Path(logs).mkdir(parents=True, exist_ok=True)
+rotating_handler = RotatingFileHandler(f"{logs}/worker.log", "a", 5**10, 2)
 env.log.addHandler(rotating_handler)
-sentry_handler = SentryHandler(getenv("SENTRY"))
+sentry_handler = SentryHandler(getenv("SENTRY", ""))
 sentry_handler.setLevel("ERROR")
 setup_logging(sentry_handler)
 env.processors.append(JSONRenderer())
@@ -32,3 +35,5 @@ stream_handler.setFormatter(JsonFormatter())
 leankit.addHandler(stream_handler)
 leankit.addHandler(rotating_handler)
 leankit.setLevel("WARNING")
+
+env.setup(env.db)

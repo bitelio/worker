@@ -12,3 +12,5 @@ env.db = env.mongo.debug
 env.log.setLevel("DEBUG")
 env.processors.append(ConsoleRenderer())
 env.configure(processors=env.processors)
+
+env.setup(env.db)
