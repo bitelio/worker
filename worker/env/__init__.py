@@ -1,8 +1,8 @@
 from os import getenv, path
 from sys import stdout
 from yaml import safe_load
-from structlog import configure, stdlib, processors, get_logger
 from logging import getLogger, StreamHandler
+from structlog import configure, stdlib, processors, get_logger
 
 
 def setup(db):

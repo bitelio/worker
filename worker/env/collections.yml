@@ -19,6 +19,3 @@ lanes:
 users:
   indices: [Id, BoardId]
   unique: []
-settings:
-  indices: [Id]
-  unique: [Id]

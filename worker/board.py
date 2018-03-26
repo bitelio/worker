@@ -94,7 +94,7 @@ class Updater:
                                 pass
                             else:
                                 if card.lane:
-                                    self.info(f"{item.name} archived",
+                                    log.info(f"{item.name} archived",
                                               action="archive")
                                     model = item.schema(card)
                                     self.replace(model, item.collection)
